@@ -1,0 +1,49 @@
+.text
+main:
+
+    # Inicializacion
+    addi $sp, $sp, -12
+    addi $t0, $zero, 5
+    addi $t1, $zero, 3
+    
+    # Escribir en memoria
+    sw   $t0, 4($sp)	 # RAW t0 (falta 1 instr)
+    sw   $t1, 8($sp) # RAW t1 (falta 1 instr)
+    
+    # Cargar desde memoria
+    lw   $t2, 4($sp)	
+    add  $t3, $t2, $t1	# RAW $t2 (MEM)
+
+    # Operaciones aritmetico-logicas (RAWs varios)
+	slt  $s1, $t1, $t0		# 3 < 5 = 1 -> s1
+    slti $s2, $t0, 4			# 5 < 4 = 0 -> s2
+    and  $t4, $s1, $s2		# 1 and 0 = 0
+    or   $t5, $s1, $s2		# 1 or 0 = 1
+	xor  $s0, $t4, $t5		# 0 xor 1 = 1 -> s0
+    add  $s3, $t0, $t1		# 5 + 3 = 8 -> s3
+    sub  $s4, $s3, $t1		# RAW en $s3 (EX) 
+	
+    # Salto condicional forward (true)
+    beq  $s0, $s1, forward
+
+    # Instruccion se cuela y debe invalidarse
+    addi $t6, $zero, 6
+
+forward:
+
+    # Bucle de 2 iteraciones
+    addi $s6, $zero, 2
+loop:
+    addi $s6, $s6, -1
+    bne  $s6, $zero, loop     # salto backward
+
+    # Salto incondicional forward
+    j    end
+
+    # Debe invalidarse por el j
+    addi $t7, $zero, 7
+
+end:
+	sw	 $s0, 12($sp)
+    add  $v0, $s0, $zero
+
