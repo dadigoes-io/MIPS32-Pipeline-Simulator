@@ -1,7 +1,7 @@
 .text
 main:
 
-    # Inicializacion
+    # Inicialización
     addi $sp, $sp, -12
     addi $t0, $zero, 5
     addi $t1, $zero, 3
@@ -14,7 +14,7 @@ main:
     lw   $t2, 4($sp)	
     add  $t3, $t2, $t1	# RAW $t2 (MEM)
 
-    # Operaciones aritmetico-logicas (RAWs varios)
+    # Operaciones aritmético-lógicas (RAWs varios)
 	slt  $s1, $t1, $t0		# 3 < 5 = 1 -> s1
     slti $s2, $t0, 4			# 5 < 4 = 0 -> s2
     and  $t4, $s1, $s2		# 1 and 0 = 0
