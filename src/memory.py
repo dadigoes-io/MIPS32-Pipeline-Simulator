@@ -16,7 +16,6 @@ class InstructionMemory (Memory):
         file = open(programFile, "r")
         line = file.readline()
         i = 0
-        
         while line:
             # Remove comments and leftover spaces
             line = line.split('#')[0].strip()
@@ -30,9 +29,13 @@ class InstructionMemory (Memory):
                 
             line = file.readline()
         file.close()
+
+    def printMem(self):
+        for k in self.mem.keys():
+            print(f"{k} : {self.mem.get(k)}")
     
     def isInstruction(self, line):
-        return '$' in line
+        return '$' in line or "j " in line
 
     def isLabel(self, line):
         return line.endswith(':')
