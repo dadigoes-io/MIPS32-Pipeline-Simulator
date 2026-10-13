@@ -105,21 +105,21 @@ class ProcessingUnit:
         
     def execute(self):
         if self.pipeline.get_id_ex_pr().is_empty():
-            self.pipeline.get_ex_mem_pr().set_empty(True)
             ex_mem_copy = {
                 "alu_result": None,
                 "store_data": None,
                 "reg_dst": None,
+                "empty": True,
                 "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
             }
             control_signals = None
 
         else:
-            self.pipeline.get_ex_mem_pr().set_empty(False)
             ex_mem_copy = {
                 "alu_result": None,
                 "store_data": None,
                 "reg_dst": None,
+                "empty": False,
                 "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
             }
             control_signals = None
@@ -153,6 +153,7 @@ class ProcessingUnit:
         )
 
     def upload_ex_mem_reg(self, ex_mem_copy):
+        self.pipeline.get_ex_mem_pr().set_empty(ex_mem_copy["empty"])
         self.pipeline.get_ex_mem_pr().set_instr_pc(ex_mem_copy["instr_pc"])
 
 
