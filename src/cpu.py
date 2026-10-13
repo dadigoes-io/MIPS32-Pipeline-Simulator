@@ -16,10 +16,10 @@ class CPU:
 
 
 def main():
-    # Unidad de control
+    # Control Unity creation
     uc = ControlUnit()
 
-    # Unidad de procesamiento
+    # Processing Unity creation
     instr_mem = InstructionMemory()
     instr_mem.read_program("programs/programa_Practica2.txt")
     instr_mem.printMem()
@@ -31,7 +31,7 @@ def main():
                         ALU(),
                         Pipeline())
 
-    # Unidad Central de Procesamiento
+    # Central Processing Unity creation
     cpu = CPU(up, uc)
 
 main()
