@@ -41,6 +41,9 @@ class InstructionMemory (Memory):
     def print_mem(self):
         for k in self.mem.keys():
             print(f"{k} : {self.mem.get(k)}")
+
+    def dir_out_of_bonds(self, dir):
+        return dir > max(self.mem.keys())
     
     def _is_instruction(self, line):
         return '$' in line or "j " in line

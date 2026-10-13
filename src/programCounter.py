@@ -6,7 +6,7 @@ class ProgramCounter:
     def get_value(self):
         return self.value
 
-    def put_value(self, val):
+    def set_value(self, val):
         self.value = val
 
     def add_four(self):

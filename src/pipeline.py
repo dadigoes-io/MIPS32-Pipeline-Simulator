@@ -44,6 +44,8 @@ class IF_ID_PipelineRegister:
     def __init__(self):
         self.next_pc = None
         self.instr = None
+        # For printing
+        self.instr_pc = None 
 
     def set_next_pc(self, pc):
         self.next_pc = pc
@@ -57,26 +59,57 @@ class IF_ID_PipelineRegister:
     def get_instr(self):
         return self.instr
 
+    # For printing
+    def get_instr_pc(self):
+        return self.instr_pc
+    
+    def set_instr_pc(self, pc):
+        self.instr_pc = pc
+
 class ID_EX_PipelineRegister:
 
     def __init__(self):
-        self.type_op = None
         self.op_1 = None
         self.op_2 = None
         self.reg_dst = None
         self.address_value = None
+        # For printing
+        self.instr_pc = None 
+
+    # For printing
+    def get_instr_pc(self):
+        return self.instr_pc
+    
+    def set_instr_pc(self, pc):
+        self.instr_pc = pc
 
 class EX_MEM_PipelineRegister:
 
     def __init__(self):
-        self.type_op = None
         self.alu_result = None
         self.store_data = None
         self.reg_dst = None
+        # For printing
+        self.instr_pc = None
+
+    # For printing
+    def get_instr_pc(self):
+        return self.instr_pc
+    
+    def set_instr_pc(self, pc):
+        self.instr_pc = pc
 
 class MEM_WB_PipelineRegister:
 
     def __init__(self):
-        self.type_op = None
         self.write_data = None
         self.reg_dst = None
+        # For printing
+        self.instr_pc = None 
+
+    # For printing
+    def get_instr_pc(self):
+        return self.instr_pc
+    
+    def set_instr_pc(self, pc):
+        self.instr_pc = pc
