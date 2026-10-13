@@ -35,7 +35,7 @@ def main():
     cpu = CPU(processing_unit, control_unit)
 
     i = 0
-    while processing_unit.pc.get_value() is not None: # cambiar a wb (esta en if)
+    while not processing_unit.is_finished(): # cambiar a wb (esta en if)
         
         processing_unit.write_back()
         (ex_mem_copy, control_signals_ex) = processing_unit.execute()

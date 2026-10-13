@@ -23,12 +23,9 @@ class ProcessingUnit:
         
         if_id_reg = self.pipeline.get_if_id_pr()
 
-        # For printing
-        self.pipeline.get_if_id_pr().set_instr_pc(pc)
-        #if_id_reg.set_next_pc(pc)
+        if not self.instruction_mem.dir_out_of_bonds(pc):
 
-
-        if pc is not None:
+            self.pipeline.get_if_id_pr().set_empty(False)
             
             # Store Instruction in IF_ID_Register
             if_id_reg.set_instr(
@@ -40,18 +37,26 @@ class ProcessingUnit:
                 self.pc.add_four()
             )
 
-            # Check PC in bounds 
-            if self.instruction_mem.dir_out_of_bonds(self.pc.get_value()):
-                self.pc.set_value(None)
+        else:
+            self.pipeline.get_if_id_pr().set_empty(True)
+
+        # For printing
+        self.pipeline.get_if_id_pr().set_instr_pc(pc)
+        #if_id_reg.set_next_pc(pc)
 
     def instruction_decode(self):
-        instr = self.pipeline.get_if_id_pr().get_instr()
 
-        alu_type_op = None
-        control_signals = None
+        if self.pipeline.get_if_id_pr().is_empty():
+            self.pipeline.get_id_ex_pr().set_empty(True)
+            alu_type_op = None
+            control_signals = None
+            
+        else:
+            self.pipeline.get_id_ex_pr().set_empty(False)
 
-        if instr is not None:
+            instr = self.pipeline.get_if_id_pr().get_instr()
             instr = instr.split()
+
             opcode = instr[0]
 
             match opcode:
@@ -88,31 +93,45 @@ class ProcessingUnit:
 
                 case "j":
                     alu_type_op = None
-                
 
-            # For printing
-            self.pipeline.get_id_ex_pr().set_instr_pc(
-                self.pipeline.get_if_id_pr().get_instr_pc()
-            )
+            control_signals = None
+
+        # For printing
+        self.pipeline.get_id_ex_pr().set_instr_pc(
+            self.pipeline.get_if_id_pr().get_instr_pc()
+        )
 
         return (alu_type_op, control_signals)
         
     def execute(self):
+        if self.pipeline.get_id_ex_pr().is_empty():
+            self.pipeline.get_ex_mem_pr().set_empty(True)
+            ex_mem_copy = {
+                "alu_result": None,
+                "store_data": None,
+                "reg_dst": None,
+                "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
+            }
+            control_signals = None
 
-        ex_mem_copy = {
-            "alu_result": None,
-            "store_data": None,
-            "reg_dst": None,
-            "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
-        }
-
-        control_signals = None
+        else:
+            self.pipeline.get_ex_mem_pr().set_empty(False)
+            ex_mem_copy = {
+                "alu_result": None,
+                "store_data": None,
+                "reg_dst": None,
+                "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
+            }
+            control_signals = None
 
         return (ex_mem_copy, control_signals)
      
-
     def memory_access(self):
+        if self.pipeline.get_ex_mem_pr().is_empty():
+            self.pipeline.get_mem_wb_pr().set_empty(True)
 
+        else:
+            self.pipeline.get_mem_wb_pr().set_empty(False)
 
         # For printing
         self.pipeline.get_mem_wb_pr().set_instr_pc(
@@ -120,7 +139,18 @@ class ProcessingUnit:
         )
 
     def write_back(self):
-        print("")
+        if not self.pipeline.get_mem_wb_pr().is_empty():
+            print("")
+
+    def is_finished(self):
+        # Check PC in bounds 
+        return (
+            self.instruction_mem.dir_out_of_bonds(self.pc.get_value()) &
+            self.pipeline.get_if_id_pr().is_empty() &
+            self.pipeline.get_id_ex_pr().is_empty() &
+            self.pipeline.get_ex_mem_pr().is_empty() &
+            self.pipeline.get_mem_wb_pr().is_empty()
+        )
 
     def upload_ex_mem_reg(self, ex_mem_copy):
         self.pipeline.get_ex_mem_pr().set_instr_pc(ex_mem_copy["instr_pc"])

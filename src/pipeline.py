@@ -44,9 +44,16 @@ class IF_ID_PipelineRegister:
     def __init__(self):
         self.next_pc = None
         self.instr = None
+        self.empty = True
         # For printing
         self.instr_pc = None 
 
+    def is_empty(self):
+        return self.empty
+
+    def set_empty(self, bool):
+        self.empty = bool
+        
     def set_next_pc(self, pc):
         self.next_pc = pc
 
@@ -73,8 +80,15 @@ class ID_EX_PipelineRegister:
         self.op_2 = None
         self.reg_dst = None
         self.address_value = None
+        self.empty = True
         # For printing
         self.instr_pc = None 
+
+    def is_empty(self):
+            return self.empty
+
+    def set_empty(self, bool):
+        self.empty = bool
 
     # For printing
     def get_instr_pc(self):
@@ -83,14 +97,23 @@ class ID_EX_PipelineRegister:
     def set_instr_pc(self, pc):
         self.instr_pc = pc
 
+    
+
 class EX_MEM_PipelineRegister:
 
     def __init__(self):
         self.alu_result = None
         self.store_data = None
         self.reg_dst = None
+        self.empty = True
         # For printing
         self.instr_pc = None
+
+    def is_empty(self):
+            return self.empty
+
+    def set_empty(self, bool):
+        self.empty = bool
 
     # For printing
     def get_instr_pc(self):
@@ -104,8 +127,15 @@ class MEM_WB_PipelineRegister:
     def __init__(self):
         self.write_data = None
         self.reg_dst = None
+        self.empty = True
         # For printing
         self.instr_pc = None 
+
+    def is_empty(self):
+            return self.empty
+
+    def set_empty(self, bool):
+        self.empty = bool
 
     # For printing
     def get_instr_pc(self):
