@@ -1,18 +1,37 @@
+from controlUnit import ControlUnit
+from processingUnit import ProcessingUnit
+from programCounter import ProgramCounter
+from memory import InstructionMemory
+from memory import DataMemory
+from registerFile import RegisterFile
 from alu import ALU
-from enums import ALUOperation
+from pipeline import Pipeline
 
 class CPU:
 
-    def __init__(self, up, uc, cycles):
+    def __init__(self, up, uc):
         self.up = up
         self.uc = uc
-        cycles = 0
+        self.cycles = 0
 
 
 def main():
+    # Unidad de control
+    uc = ControlUnit()
 
-    print(f"5 sub 10 = {ALU.operation(5, 10, ALUOperation.SUB)}")
-    print(f"-2 slt 1 = {ALU.operation(-2, 1, ALUOperation.SLT)}")
+    # Unidad de procesamiento
+    instr_mem = InstructionMemory()
+    instr_mem.read_program("programs/programa_Practica2.txt")
+    instr_mem.printMem()
 
+    up = ProcessingUnit(ProgramCounter(),
+                        instr_mem,
+                        DataMemory(),
+                        RegisterFile(),
+                        ALU(),
+                        Pipeline())
+
+    # Unidad Central de Procesamiento
+    cpu = CPU(up, uc)
 
 main()

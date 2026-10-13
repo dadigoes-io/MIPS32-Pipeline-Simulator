@@ -37,7 +37,7 @@ class RegisterFile:
         }   
     
     def storeValue(self, k, v):
-        if k is not "$zero":
+        if k != "$zero":
            self.mem[k] = v
 
     def loadValue(self, k):

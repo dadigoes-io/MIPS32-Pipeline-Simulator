@@ -29,6 +29,15 @@ class InstructionMemory (Memory):
                 
             line = file.readline()
         file.close()
+        self.replaceLabels()
+
+    def replaceLabels(self):
+        for line in self.mem.keys():
+            for label in self.labels.keys():
+                if label in self.mem[line]:
+                    new_line = self.mem[line].replace(label, str(self.labels[label]))
+                    self.mem[line] = new_line
+
 
     def printMem(self):
         for k in self.mem.keys():
@@ -39,6 +48,7 @@ class InstructionMemory (Memory):
 
     def isLabel(self, line):
         return line.endswith(':')
+    
     
 class DataMemory (Memory):
 
