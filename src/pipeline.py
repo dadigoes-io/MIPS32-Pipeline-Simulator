@@ -7,12 +7,55 @@ class Pipeline:
         self.ex_mem_pr = EX_MEM_PipelineRegister()
         self.mem_wb_pr = MEM_WB_PipelineRegister()
 
+    # ID_ID Register
+
+    def get_if_id_pr(self):
+        return self.if_id_pr
+    
+    def set_if_id_pr(self, if_id_pr):
+        self.if_id_pr = if_id_pr
+
+    # ID_EX Register
+
+    def get_id_ex_pr(self):
+            return self.id_ex_pr
+    
+    def set_id_ex_pr(self, id_ex_pr):
+        self.id_ex_pr = id_ex_pr
+
+    # EX_MEM Register
+
+    def get_ex_mem_pr(self):
+        return self.ex_mem_pr
+      
+    def set_ex_mem_pr(self, ex_mem_pr ):
+        self.ex_mem_pr = ex_mem_pr 
+
+    # MEM_WB
+
+    def get_mem_wb_pr(self):
+            return self.mem_wb_pr
+          
+    def set_mem_wb_pr(self, mem_wb_pr ):
+        self.mem_wb_pr = mem_wb_pr 
 
 class IF_ID_PipelineRegister:
 
     def __init__(self):
         self.next_pc = None
         self.instr = None
+
+    def set_next_pc(self, pc):
+        self.next_pc = pc
+
+    def get_next_pc(self):
+        return self.next_pc
+
+    def set_instr(self, instr):
+        self.instr = instr
+
+    def get_instr(self):
+        return self.instr
 
 class ID_EX_PipelineRegister:
 

@@ -31,14 +31,14 @@ class RegisterFile:
             "$k0": None,
             "$k1": None,
             "$gp": None,
-            "$sp": None,
+            "$sp": 4096,
             "$fp": None,
             "$ra": None,
         }   
     
-    def storeValue(self, k, v):
+    def store_value(self, k, v):
         if k != "$zero":
            self.mem[k] = v
 
-    def loadValue(self, k):
+    def load_value(self, k):
         return self.mem[k]

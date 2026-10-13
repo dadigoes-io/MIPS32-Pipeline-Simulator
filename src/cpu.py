@@ -22,7 +22,7 @@ def main():
     # Processing Unity creation
     instr_mem = InstructionMemory()
     instr_mem.read_program("programs/programa_Practica2.txt")
-    instr_mem.printMem()
+    instr_mem.print_mem()
 
     up = ProcessingUnit(ProgramCounter(),
                         instr_mem,
@@ -33,5 +33,8 @@ def main():
 
     # Central Processing Unity creation
     cpu = CPU(up, uc)
+
+    while not uc.is_empty():
+        print()
 
 main()

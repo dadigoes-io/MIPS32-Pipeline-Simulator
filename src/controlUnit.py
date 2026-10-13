@@ -33,18 +33,21 @@ class ControlUnit:
 
         self.alu_operation = None
 
-    def id(self, control_signals, alu_operation):
+    def id_to_ex(self, control_signals, alu_operation):
         for k in self.id_ex_control.keys():
             self.id_ex_control[k] = control_signals[k]
         self.alu_operation = alu_operation
 
-    def ex(self):
+    def ex_to_mem(self):
         for k in self.ex_mem_control.keys():
             self.ex_mem_control[k] = self.id_ex_control[k]
 
-    def mem(self):
+    def mem_to_wb(self):
         for k in self.mem_wb_control.keys():
             self.mem_wb_control[k] = self.ex_mem_control[k]
+
+    def is_empty(self):
+        return (self.id_ex_control.values is None) & (self.ex_mem_control.values is None) & (self.mem_wb_control.values is None)
 
     def get_id_ex_control(self):
         return self.id_ex_control

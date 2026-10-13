@@ -20,33 +20,32 @@ class InstructionMemory (Memory):
             # Remove comments and leftover spaces
             line = line.split('#')[0].strip()
 
-            if self.isLabel(line):
+            if self._is_label(line):
                 self.labels[line[:-1]] = i
 
-            if self.isInstruction(line):
+            if self._is_instruction(line):
                 self.mem[i] = line
                 i += 4            
                 
             line = file.readline()
         file.close()
-        self.replaceLabels()
+        self._replace_labels()
 
-    def replaceLabels(self):
-
+    def _replace_labels(self):
         for instr_dir in self.mem.keys():
             aux_label = self.mem[instr_dir].split()[-1]
             if aux_label in self.labels.keys():            
                 new_line = self.mem[instr_dir].replace(aux_label, str(self.labels[aux_label]))
                 self.mem[instr_dir] = new_line
 
-    def printMem(self):
+    def print_mem(self):
         for k in self.mem.keys():
             print(f"{k} : {self.mem.get(k)}")
     
-    def isInstruction(self, line):
+    def _is_instruction(self, line):
         return '$' in line or "j " in line
 
-    def isLabel(self, line):
+    def _is_label(self, line):
         return line.endswith(':')
     
     
