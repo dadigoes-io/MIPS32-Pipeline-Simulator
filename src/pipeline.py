@@ -83,7 +83,7 @@ class ID_EX_PipelineRegister:
 
     def upload_reg(self, reg_dst, op_1, op_2, address_value):
         self.reg_dst = reg_dst
-        self.op1 = op_1
+        self.op_1 = op_1
         self.op_2 = op_2
         self.address_value = address_value
         self.empty = False
@@ -93,6 +93,18 @@ class ID_EX_PipelineRegister:
 
     def set_empty(self, bool):
         self.empty = bool
+
+    def get_reg_dst(self):
+        return self.reg_dst 
+
+    def get_op_1(self):
+        return self.op_1
+
+    def get_op_2(self):
+        return self.op_2
+
+    def get_address_value(self):
+        return self.address_value
 
     # For printing
     def get_instr_pc(self):

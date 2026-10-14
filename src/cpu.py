@@ -36,24 +36,33 @@ def main():
     # Central Processing Unity creation
     cpu = CPU(processing_unit, control_unit)
 
-    i = 0
+    alu_type_op = None
+
     while not processing_unit.is_finished():
-        
+
+        # WB
         processing_unit.write_back()
 
-        (ex_mem_copy, control_signals_ex) = processing_unit.execute()
+        # EX execution without store
+        (ex_mem_copy, control_signals_ex, jump_address) = processing_unit.execute(control_unit)
 
+        # MEM
         processing_unit.memory_access()
-        
+        control_unit.mem_to_wb()
+
+        # EX upload Registers
         processing_unit.upload_ex_mem_reg(ex_mem_copy)
+        control_unit.ex_to_mem()
         
+        # ID
         (alu_type_op, control_signals_id) = processing_unit.instruction_decode()
-        
-        processing_unit.instruction_fetch(True, None)
+        control_unit.id_to_ex(control_signals_id, alu_type_op)
+
+        # IF
+        processing_unit.instruction_fetch(control_unit.get_id_ex_control()["Jump"], jump_address)
         
         # Print execution
         processing_unit.print_execution()
-
         
         input()
 

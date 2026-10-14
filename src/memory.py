@@ -32,10 +32,12 @@ class InstructionMemory (Memory):
         self._replace_labels()
 
     def _replace_labels(self):
+
         for instr_dir in self.mem.keys():
             aux_label = self.mem[instr_dir].split()[-1]
+
             if aux_label in self.labels.keys():            
-                new_line = self.mem[instr_dir].replace(aux_label, str(self.labels[aux_label]))
+                new_line = self.mem[instr_dir].replace(aux_label, str(self.labels[aux_label] - instr_dir))
                 self.mem[instr_dir] = new_line
 
     def print_mem(self):

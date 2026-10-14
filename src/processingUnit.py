@@ -4,6 +4,7 @@ from registerFile import RegisterFile
 from alu import ALU
 from pipeline import *
 from enums import *
+from controlUnit import ControlUnit
 
 class ProcessingUnit:
 
@@ -193,7 +194,7 @@ class ProcessingUnit:
 
                 case "j":
                     # j address_value
-                    alu_type_op = None 
+                    alu_type_op = ALUOperation.ADD 
 
                     reg_dst = None
                     op_1 = None
@@ -216,8 +217,10 @@ class ProcessingUnit:
 
         return (alu_type_op, control_signals)
         
-    def execute(self):
+    def execute(self, control_unit: ControlUnit):
+
         if self.pipeline.get_id_ex_pr().is_empty():
+
             ex_mem_copy = {
                 "alu_result": None,
                 "store_data": None,
@@ -225,19 +228,47 @@ class ProcessingUnit:
                 "empty": True,
                 "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
             }
-            control_signals = None
 
+            return  ex_mem_copy, None, None
+        
         else:
-            ex_mem_copy = {
-                "alu_result": None,
-                "store_data": None,
-                "reg_dst": None,
-                "empty": False,
-                "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
-            }
-            control_signals = None
 
-        return (ex_mem_copy, control_signals)
+            control = control_unit.get_id_ex_control()
+            id_ex_reg = self.pipeline.get_id_ex_pr()
+
+            if control["Jump"]:
+
+                ex_mem_copy = {
+                    "alu_result": None,
+                    "store_data": None,
+                    "reg_dst": None,
+                    "empty": True,
+                    "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
+                }
+
+                jump_address = self.alu.operation(id_ex_reg.get_address_value(),
+                                                  id_ex_reg.get_instr_pc())
+                
+            else:
+
+                reg_dst = id_ex_reg.get_reg_dst()
+                op_1 = id_ex_reg.get_op_1()
+                op_2 = id_ex_reg.get_op_2()
+                address_value = id_ex_reg.get_address_value()
+
+                alu_result = self.alu.operation(op_1,
+                                                address_value if control["ALUSrc"] else op_2,
+                                                control_unit.get_alu_operation())
+
+                ex_mem_copy = {
+                    "alu_result": alu_result,
+                    "store_data": op_2,
+                    "reg_dst": reg_dst,
+                    "empty": False,
+                    "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
+                }
+
+            return (ex_mem_copy, control_unit.get_id_ex_control(), jump_address)
      
     def memory_access(self):
         if self.pipeline.get_ex_mem_pr().is_empty():

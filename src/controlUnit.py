@@ -5,6 +5,7 @@ class ControlUnit:
         self.id_ex_control = {
             # ID_EX
             "ALUSrc" : None,
+            "Jump" : None,
             # EX_MEM
             "Branch" : None,
             "BranchN" : None,
