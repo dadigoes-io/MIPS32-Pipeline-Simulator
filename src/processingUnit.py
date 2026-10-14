@@ -57,13 +57,14 @@ class ProcessingUnit:
 
                     alu_type_op = ALUOperation.ADD
                     reg_dst = instr[1].split(",")   # $dest
-                    op1 = base.rstrip(")")          # $base
-                    op2 = None
+                    op_1 = base.rstrip(")")          # $base
+                    op_2 = None
                     address_value = offset          # offset
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : True,
+                        "Jump" : False,
                         # EX_MEM
                         "Branch" : False,
                         "MemWrite": False,
@@ -81,13 +82,14 @@ class ProcessingUnit:
 
                     alu_type_op = ALUOperation.ADD
                     reg_dst = None
-                    op1 = base.rstrip(")")          # $base
-                    op2 = instr[1]                  # $source
+                    op_1 = base.rstrip(")")          # $base
+                    op_2 = instr[1]                  # $source
                     address_value = offset          # offset
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : True,
+                        "Jump" : False,
                         # EX_MEM
                         "Branch" : False,
                         "MemWrite": True,
@@ -100,20 +102,47 @@ class ProcessingUnit:
                     }
             
                 case "beq" | "bne":
-                    alu_type_op = ALUOperation.SUB    
+                    # beq  $op1, $op2, address_value
+                    alu_type_op = ALUOperation.SUB 
 
-                case ("addi"| "subi"):
+                    reg_dst = None
+                    op_1 = instr[1].rstrip(",")
+                    op_2 = instr[2].rstrip(",")
+                    address_value = instr[3]
+
+                    control_signals = {
+                        # ID_EX
+                        "ALUSrc" : False,
+                        # EX_MEM
+                        "Branch" : True,
+                        "BranchN" : False,
+                        "MemWrite": False,
+                        "MemRead": False,
+                        "Zero": False,  # Upload in ex()
+                    }
+                    if opcode == "bne":
+                        control_signals["BranchN"] = True
+
+                case ("addi"| "subi" | "slti"):
                     # addi $dest, $op1, i
-                    alu_type_op = ALUOperation.ADD if opcode == "addi" else ALUOperation.SUB
+
+                    match opcode:
+                        case "addi":
+                            alu_type_op = ALUOperation.ADD
+                        case "subi":
+                            alu_type_op = ALUOperation.SUB
+                        case "slti":
+                            alu_type_op = ALUOperation.SLT
                     
                     reg_dst = instr[1].rstrip(",")
-                    op1 = instr[2].rstrip(",")
-                    op2 = None
+                    op_1 = instr[2].rstrip(",")
+                    op_2 = None
                     address_value = instr[3]
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : True,
+                        "Jump" : False,
                         # EX_MEM
                         "Branch" : False,
                         "MemWrite": True,
@@ -125,7 +154,7 @@ class ProcessingUnit:
                         "RegDst" : True
                     }
 
-                case ("add" | "sub" | "and" | "or" | "xor"):
+                case ("add" | "sub" | "and" | "or" | "xor" | "slt"):
                     # and $dest, $op1, op2
 
                     match opcode:
@@ -139,15 +168,18 @@ class ProcessingUnit:
                             alu_type_op = ALUOperation.OR
                         case "xor":
                             alu_type_op = ALUOperation.OR
+                        case "slt":
+                            alu_type_op = ALUOperation.OR
 
                     reg_dst = instr[1].rstrip(",")
-                    op1 = instr[2].rstrip(",")
-                    op2 = instr[3]
+                    op_1 = instr[2].rstrip(",")
+                    op_2 = instr[3]
                     address_value = None
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : False,
+                        "Jump" : False,
                         # EX_MEM
                         "Branch" : False,
                         "MemWrite": True,
@@ -159,14 +191,23 @@ class ProcessingUnit:
                         "RegDst" : True
                     }
 
-                case ("slt" | "slti"):
-                    alu_type_op = ALUOperation.SLT
-
                 case "j":
-                    alu_type_op = None
+                    # j address_value
+                    alu_type_op = None 
+
+                    reg_dst = None
+                    op_1 = None
+                    op_2 = None
+                    address_value = instr[1]
+
+                    control_signals = {
+                        # ID_EX
+                        "ALUSrc" : False,
+                        "Jump" : True
+                    }
 
             # Update ID_EX Register
-            self.pipeline.get_id_ex_pr().upload_reg(reg_dst, op1, op2, address_value)
+            self.pipeline.get_id_ex_pr().upload_reg(reg_dst, op_1, op_2, address_value)
 
         # For printing
         self.pipeline.get_id_ex_pr().set_instr_pc(

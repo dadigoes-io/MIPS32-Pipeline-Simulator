@@ -16,7 +16,7 @@ main:
 
     # Operaciones aritmético-lógicas (RAWs varios)
 	slt  $s1, $t1, $t0		# 3 < 5 = 1 -> s1
-    slti $s2, $t0, 4			# 5 < 4 = 0 -> s2
+    slti $s2, $t0, 4		# 5 < 4 = 0 -> s2
     and  $t4, $s1, $s2		# 1 and 0 = 0
     or   $t5, $s1, $s2		# 1 or 0 = 1
 	xor  $s0, $t4, $t5		# 0 xor 1 = 1 -> s0

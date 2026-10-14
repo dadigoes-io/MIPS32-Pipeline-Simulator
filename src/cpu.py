@@ -24,12 +24,14 @@ def main():
     instr_mem.read_program("programs/programa_prueba.txt")
     instr_mem.print_mem()
 
-    processing_unit = ProcessingUnit(ProgramCounter(),
-                        instr_mem,
-                        DataMemory(),
-                        RegisterFile(),
-                        ALU(),
-                        Pipeline())
+    processing_unit = ProcessingUnit(
+        ProgramCounter(),
+        instr_mem,
+        DataMemory(),
+        RegisterFile(),
+        ALU(),
+        Pipeline()
+    )
 
     # Central Processing Unity creation
     cpu = CPU(processing_unit, control_unit)

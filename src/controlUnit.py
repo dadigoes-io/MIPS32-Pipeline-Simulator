@@ -7,6 +7,7 @@ class ControlUnit:
             "ALUSrc" : None,
             # EX_MEM
             "Branch" : None,
+            "BranchN" : None,
             "MemWrite": None,
             "MemRead": None,
             "Zero": None,
