@@ -4,15 +4,16 @@ class ControlUnit:
 
         self.id_ex_control = {
             # ID_EX
-            "RegDst" : None,
             "ALUSrc" : None,
             # EX_MEM
             "Branch" : None,
             "MemWrite": None,
             "MemRead": None,
+            "Zero": None,
             # MEM_WB
             "MemtoReg" : None,
-            "RegWrite": None 
+            "RegWrite": None,
+            "RegDst" : None # Necesario?
         }
 
         self.ex_mem_control = {
@@ -20,15 +21,18 @@ class ControlUnit:
             "Branch" : None,
             "MemWrite": None,
             "MemRead": None,
+            "Zero": None,
             # MEM_WB
             "MemtoReg" : None,
-            "RegWrite": None 
+            "RegWrite": None, 
+            "RegDst" : None 
         }
 
         self.mem_wb_control = {
             # MEM_WB
             "MemtoReg" : None,
-            "RegWrite": None     
+            "RegWrite": None,
+            "RegDst" : None     
         }
 
         self.alu_operation = None

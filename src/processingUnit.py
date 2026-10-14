@@ -25,16 +25,9 @@ class ProcessingUnit:
 
         if not self.instruction_mem.dir_out_of_bonds(pc):
 
-            self.pipeline.get_if_id_pr().set_empty(False)
-            
-            # Store Instruction in IF_ID_Register
-            if_id_reg.set_instr(
-                self.instruction_mem.read(pc)
-            )
-
-            # Add PC + 4 AND store in IF_ID_Register
-            if_id_reg.set_next_pc(
-                self.pc.add_four()
+            self.pipeline.get_if_id_pr().upload_reg(
+                self.pc.add_four(),
+                self.instruction_mem.read(pc),
             )
 
         else:
@@ -52,8 +45,6 @@ class ProcessingUnit:
             control_signals = None
             
         else:
-            self.pipeline.get_id_ex_pr().set_empty(False)
-
             instr = self.pipeline.get_if_id_pr().get_instr()
             instr = instr.split()
 
@@ -61,32 +52,112 @@ class ProcessingUnit:
 
             match opcode:
                 case "lw":
+                    # lw $dest, offset($base)
+                    offset, base = instr[2].split("(")
+
                     alu_type_op = ALUOperation.ADD
-                    op1 = None
-                    op2 = instr[2]
-                    reg_dest = instr[1][:-1]
-                    address_value = None
+                    reg_dst = instr[1].split(",")   # $dest
+                    op1 = base.rstrip(")")          # $base
+                    op2 = None
+                    address_value = offset          # offset
+
+                    control_signals = {
+                        # ID_EX
+                        "ALUSrc" : True,
+                        # EX_MEM
+                        "Branch" : False,
+                        "MemWrite": False,
+                        "MemRead": True,
+                        "Zero": False,
+                        # MEM_WB
+                        "MemtoReg" : True,
+                        "RegWrite": True,
+                        "RegDst" : True
+                    }
 
                 case "sw":
-                    alu_type_op = ALUOperation.ADD
+                    # sw $source, offset($base)
+                    offset, base = instr[2].split("(")
 
+                    alu_type_op = ALUOperation.ADD
+                    reg_dst = None
+                    op1 = base.rstrip(")")          # $base
+                    op2 = instr[1]                  # $source
+                    address_value = offset          # offset
+
+                    control_signals = {
+                        # ID_EX
+                        "ALUSrc" : True,
+                        # EX_MEM
+                        "Branch" : False,
+                        "MemWrite": True,
+                        "MemRead": False,
+                        "Zero": False,
+                        # MEM_WB
+                        "MemtoReg" : False,
+                        "RegWrite": True,
+                        "RegDst" : True
+                    }
+            
                 case "beq" | "bne":
                     alu_type_op = ALUOperation.SUB    
 
-                case ("add" | "addi"):
-                    alu_type_op = ALUOperation.ADD
+                case ("addi"| "subi"):
+                    # addi $dest, $op1, i
+                    alu_type_op = ALUOperation.ADD if opcode == "addi" else ALUOperation.SUB
+                    
+                    reg_dst = instr[1].rstrip(",")
+                    op1 = instr[2].rstrip(",")
+                    op2 = None
+                    address_value = instr[3]
 
-                case ("sub" | "subi"):
-                    alu_type_op = ALUOperation.SUB
+                    control_signals = {
+                        # ID_EX
+                        "ALUSrc" : True,
+                        # EX_MEM
+                        "Branch" : False,
+                        "MemWrite": True,
+                        "MemRead": False,
+                        "Zero": False,
+                        # MEM_WB
+                        "MemtoReg" : False,
+                        "RegWrite": True,
+                        "RegDst" : True
+                    }
 
-                case "and":
-                    alu_type_op = ALUOperation.AND
+                case ("add" | "sub" | "and" | "or" | "xor"):
+                    # and $dest, $op1, op2
 
-                case "or":
-                    alu_type_op = ALUOperation.OR
+                    match opcode:
+                        case "add":
+                            alu_type_op = ALUOperation.ADD
+                        case "sub":
+                            alu_type_op = ALUOperation.SUB
+                        case "and":
+                            alu_type_op = ALUOperation.AND
+                        case "or":
+                            alu_type_op = ALUOperation.OR
+                        case "xor":
+                            alu_type_op = ALUOperation.OR
 
-                case "xor":
-                    alu_type_op = ALUOperation.XOR
+                    reg_dst = instr[1].rstrip(",")
+                    op1 = instr[2].rstrip(",")
+                    op2 = instr[3]
+                    address_value = None
+
+                    control_signals = {
+                        # ID_EX
+                        "ALUSrc" : False,
+                        # EX_MEM
+                        "Branch" : False,
+                        "MemWrite": True,
+                        "MemRead": False,
+                        "Zero": False,
+                        # MEM_WB
+                        "MemtoReg" : False,
+                        "RegWrite": True,
+                        "RegDst" : True
+                    }
 
                 case ("slt" | "slti"):
                     alu_type_op = ALUOperation.SLT
@@ -94,7 +165,8 @@ class ProcessingUnit:
                 case "j":
                     alu_type_op = None
 
-            control_signals = None
+            # Update ID_EX Register
+            self.pipeline.get_id_ex_pr().upload_reg(reg_dst, op1, op2, address_value)
 
         # For printing
         self.pipeline.get_id_ex_pr().set_instr_pc(
@@ -153,9 +225,16 @@ class ProcessingUnit:
         )
 
     def upload_ex_mem_reg(self, ex_mem_copy):
-        self.pipeline.get_ex_mem_pr().set_empty(ex_mem_copy["empty"])
-        self.pipeline.get_ex_mem_pr().set_instr_pc(ex_mem_copy["instr_pc"])
-
+        self.pipeline.get_ex_mem_pr().upload_reg(
+            ex_mem_copy["reg_dst"],
+            ex_mem_copy["alu_result"],
+            ex_mem_copy["store_data"],
+            ex_mem_copy["empty"]
+        )
+        # For printing
+        self.pipeline.get_ex_mem_pr().set_instr_pc(
+            self.pipeline.get_id_ex_pr().get_instr_pc()
+        )
 
     def print_execution(self):
         print("====================")

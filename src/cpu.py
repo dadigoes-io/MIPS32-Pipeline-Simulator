@@ -35,16 +35,21 @@ def main():
     cpu = CPU(processing_unit, control_unit)
 
     i = 0
-    while not processing_unit.is_finished(): # cambiar a wb (esta en if)
+    while not processing_unit.is_finished():
         
         processing_unit.write_back()
+
         (ex_mem_copy, control_signals_ex) = processing_unit.execute()
+
         processing_unit.memory_access()
+        
         processing_unit.upload_ex_mem_reg(ex_mem_copy)
+        
         (alu_type_op, control_signals_id) = processing_unit.instruction_decode()
+        
         processing_unit.instruction_fetch(True, None)
         
-        
+        # Print execution
         processing_unit.print_execution()
 
         

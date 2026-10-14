@@ -48,23 +48,20 @@ class IF_ID_PipelineRegister:
         # For printing
         self.instr_pc = None 
 
+    def upload_reg(self, next_pc, instr):
+        self.next_pc = next_pc
+        self.instr = instr
+        self.empty = False
+
     def is_empty(self):
         return self.empty
 
     def set_empty(self, bool):
         self.empty = bool
-        
-    def set_next_pc(self, pc):
-        self.next_pc = pc
-
-    def get_next_pc(self):
-        return self.next_pc
-
-    def set_instr(self, instr):
-        self.instr = instr
 
     def get_instr(self):
         return self.instr
+    
 
     # For printing
     def get_instr_pc(self):
@@ -76,13 +73,20 @@ class IF_ID_PipelineRegister:
 class ID_EX_PipelineRegister:
 
     def __init__(self):
+        self.reg_dst = None
         self.op_1 = None
         self.op_2 = None
-        self.reg_dst = None
         self.address_value = None
         self.empty = True
         # For printing
         self.instr_pc = None 
+
+    def upload_reg(self, reg_dst, op_1, op_2, address_value):
+        self.reg_dst = reg_dst
+        self.op1 = op_1
+        self.op_2 = op_2
+        self.address_value = address_value
+        self.empty = False
 
     def is_empty(self):
             return self.empty
@@ -97,17 +101,21 @@ class ID_EX_PipelineRegister:
     def set_instr_pc(self, pc):
         self.instr_pc = pc
 
-    
-
 class EX_MEM_PipelineRegister:
 
     def __init__(self):
+        self.reg_dst = None
         self.alu_result = None
         self.store_data = None
-        self.reg_dst = None
         self.empty = True
         # For printing
         self.instr_pc = None
+
+    def upload_reg(self, reg_dst, alu_result, store_data, empty):
+        self.reg_dst = reg_dst
+        self.alu_result = alu_result
+        self.store_data = store_data
+        self.empty = empty
 
     def is_empty(self):
             return self.empty
@@ -130,6 +138,11 @@ class MEM_WB_PipelineRegister:
         self.empty = True
         # For printing
         self.instr_pc = None 
+
+    def upload_reg(self, write_data, reg_dst):
+        self.write_data = write_data
+        self.reg_dst = reg_dst
+        self.empty = False
 
     def is_empty(self):
             return self.empty
