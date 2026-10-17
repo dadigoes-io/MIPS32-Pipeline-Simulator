@@ -24,4 +24,4 @@ class ALU:
             case ALUOperation.SLT:
                 result = int(op1 < op2)
             
-        return (result, result == 0)
+        return result

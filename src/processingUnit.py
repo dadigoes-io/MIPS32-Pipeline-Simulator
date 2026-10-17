@@ -16,26 +16,26 @@ class ProcessingUnit:
         self.alu = alu
         self.pipeline = pipeline
 
-    def instruction_fetch(self, pc_src, jump_dir):
-        # Note: jump_dir not implemented yet
+    def instruction_fetch(self, pc_src, jump_address):
         
-        # Load pc and IF_ID Register
-        pc = self.pc.get_value() if pc_src else jump_dir
+        # Load pc from IF_ID Register
+        pc_aux =  jump_address if pc_src else self.pc.get_value()
+
+        if pc_src:
+            self.pc.set_value(pc_aux)
         
-        if_id_reg = self.pipeline.get_if_id_pr()
+        if not self.instruction_mem.is_out_of_bounds(pc_aux):
 
-        if not self.instruction_mem.dir_out_of_bonds(pc):
-
-            self.pipeline.get_if_id_pr().upload_reg(
+            self.pipeline.get_if_id_pr().update_reg(
                 self.pc.add_four(),
-                self.instruction_mem.read(pc),
+                self.instruction_mem.read(pc_aux)
             )
 
         else:
             self.pipeline.get_if_id_pr().set_empty(True)
 
         # For printing
-        self.pipeline.get_if_id_pr().set_instr_pc(pc)
+        self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
         #if_id_reg.set_next_pc(pc)
 
     def instruction_decode(self):
@@ -56,21 +56,22 @@ class ProcessingUnit:
                     # lw $dest, offset($base)
                     offset, base = instr[2].split("(")
 
+                    # Load registers from Register File
                     alu_type_op = ALUOperation.ADD
-                    reg_dst = instr[1].split(",")   # $dest
-                    op_1 = base.rstrip(")")          # $base
+                    reg_dst = instr[1].split(",")[0]   # $dest
+                    op_1 = self.register_file.load_value(base.rstrip(")"))         # $base
                     op_2 = None
                     address_value = offset          # offset
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : True,
-                        "Jump" : False,
                         # EX_MEM
+                        "Jump" : False,
                         "Branch" : False,
+                        "BranchN" : False,
                         "MemWrite": False,
                         "MemRead": True,
-                        "Zero": False,
                         # MEM_WB
                         "MemtoReg" : True,
                         "RegWrite": True,
@@ -83,22 +84,22 @@ class ProcessingUnit:
 
                     alu_type_op = ALUOperation.ADD
                     reg_dst = None
-                    op_1 = base.rstrip(")")          # $base
-                    op_2 = instr[1]                  # $source
+                    op_1 = self.register_file.load_value(base.rstrip(")"))          # $base
+                    op_2 = self.register_file.load_value(instr[1]).rstrip(",")                  # $source
                     address_value = offset          # offset
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : True,
-                        "Jump" : False,
                         # EX_MEM
+                        "Jump" : False,
                         "Branch" : False,
+                        "BranchN" : False,
                         "MemWrite": True,
                         "MemRead": False,
-                        "Zero": False,
                         # MEM_WB
                         "MemtoReg" : False,
-                        "RegWrite": True,
+                        "RegWrite": False,
                         "RegDst" : True
                     }
             
@@ -107,19 +108,23 @@ class ProcessingUnit:
                     alu_type_op = ALUOperation.SUB 
 
                     reg_dst = None
-                    op_1 = instr[1].rstrip(",")
-                    op_2 = instr[2].rstrip(",")
+                    op_1 = self.register_file.load_value(instr[1].rstrip(","))
+                    op_2 = self.register_file.load_value(instr[2].rstrip(","))
                     address_value = instr[3]
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : False,
                         # EX_MEM
+                        "Jump" : False,
                         "Branch" : True,
                         "BranchN" : False,
                         "MemWrite": False,
                         "MemRead": False,
-                        "Zero": False,  # Upload in ex()
+                        # MEM_WB
+                        "MemtoReg" : None,
+                        "RegWrite": None,
+                        "RegDst" : None
                     }
                     if opcode == "bne":
                         control_signals["BranchN"] = True
@@ -134,21 +139,22 @@ class ProcessingUnit:
                             alu_type_op = ALUOperation.SUB
                         case "slti":
                             alu_type_op = ALUOperation.SLT
-                    
+
+                    # Load registers from Register File
                     reg_dst = instr[1].rstrip(",")
-                    op_1 = instr[2].rstrip(",")
+                    op_1 = self.register_file.load_value(instr[2].rstrip(","))
                     op_2 = None
                     address_value = instr[3]
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : True,
-                        "Jump" : False,
                         # EX_MEM
+                        "Jump" : False,
                         "Branch" : False,
-                        "MemWrite": True,
+                        "BranchN" : False,
+                        "MemWrite": False,
                         "MemRead": False,
-                        "Zero": False,
                         # MEM_WB
                         "MemtoReg" : False,
                         "RegWrite": True,
@@ -168,24 +174,25 @@ class ProcessingUnit:
                         case "or":
                             alu_type_op = ALUOperation.OR
                         case "xor":
-                            alu_type_op = ALUOperation.OR
+                            alu_type_op = ALUOperation.XOR
                         case "slt":
-                            alu_type_op = ALUOperation.OR
+                            alu_type_op = ALUOperation.SLT
 
+                    # Load registers from Register File
                     reg_dst = instr[1].rstrip(",")
-                    op_1 = instr[2].rstrip(",")
-                    op_2 = instr[3]
+                    op_1 = self.register_file.load_value(instr[2].rstrip(","))
+                    op_2 = self.register_file.load_value(instr[3])
                     address_value = None
 
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : False,
-                        "Jump" : False,
                         # EX_MEM
+                        "Jump" : False,
                         "Branch" : False,
-                        "MemWrite": True,
+                        "BranchN" : False,
+                        "MemWrite": False,
                         "MemRead": False,
-                        "Zero": False,
                         # MEM_WB
                         "MemtoReg" : False,
                         "RegWrite": True,
@@ -204,11 +211,20 @@ class ProcessingUnit:
                     control_signals = {
                         # ID_EX
                         "ALUSrc" : False,
-                        "Jump" : True
+                        # EX_MEM
+                        "Jump" : True,
+                        "Branch" : False,
+                        "BranchN" : False,
+                        "MemWrite": False,
+                        "MemRead": False,
+                        # MEM_WB
+                        "MemtoReg" : False,
+                        "RegWrite": False,
+                        "RegDst" : False 
                     }
 
             # Update ID_EX Register
-            self.pipeline.get_id_ex_pr().upload_reg(reg_dst, op_1, op_2, address_value)
+            self.pipeline.get_id_ex_pr().update_reg(reg_dst, op_1, op_2, address_value)
 
         # For printing
         self.pipeline.get_id_ex_pr().set_instr_pc(
@@ -219,17 +235,16 @@ class ProcessingUnit:
         
     def execute(self, control_unit: ControlUnit):
 
+        ex_mem_copy = {
+            "alu_result": None,
+            "store_data": None,
+            "reg_dst": None,
+            "empty": False,
+            "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
+        }
+
         if self.pipeline.get_id_ex_pr().is_empty():
-
-            ex_mem_copy = {
-                "alu_result": None,
-                "store_data": None,
-                "reg_dst": None,
-                "empty": True,
-                "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
-            }
-
-            return  ex_mem_copy, None, None
+            return  ex_mem_copy, None
         
         else:
 
@@ -237,38 +252,44 @@ class ProcessingUnit:
             id_ex_reg = self.pipeline.get_id_ex_pr()
 
             if control["Jump"]:
+                jump_address = self.alu.operation(int(id_ex_reg.get_address_value()),
+                                                  int(id_ex_reg.get_instr_pc()),
+                                                  ALUOperation.ADD)
 
-                ex_mem_copy = {
-                    "alu_result": None,
-                    "store_data": None,
-                    "reg_dst": None,
-                    "empty": True,
-                    "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
-                }
+            elif control["Branch"]:
+                # Comprobar en eq o ne y cargar posible salto
 
-                jump_address = self.alu.operation(id_ex_reg.get_address_value(),
-                                                  id_ex_reg.get_instr_pc())
+                alu_result = int(self.alu.operation(int(id_ex_reg.get_op_1()),
+                                                int(id_ex_reg.get_op_2()),
+                                                ALUOperation.SUB))
                 
+                signal_zero = (alu_result == 0)
+
+                if control_unit.get_id_ex_control()["BranchN"] ^ signal_zero:
+                    jump_address = self.alu.operation(
+                        int(id_ex_reg.get_address_value()),
+                        int(id_ex_reg.get_instr_pc()),
+                        ALUOperation.ADD
+                    )
+                else:
+                    jump_address = None
+                    
             else:
-
-                reg_dst = id_ex_reg.get_reg_dst()
-                op_1 = id_ex_reg.get_op_1()
-                op_2 = id_ex_reg.get_op_2()
-                address_value = id_ex_reg.get_address_value()
-
-                alu_result = self.alu.operation(op_1,
-                                                address_value if control["ALUSrc"] else op_2,
-                                                control_unit.get_alu_operation())
-
+                alu_result = int(self.alu.operation(int(id_ex_reg.get_op_1()),
+                                                int(id_ex_reg.get_address_value()) if control["ALUSrc"] else int(id_ex_reg.get_op_2()),
+                                                control_unit.get_alu_operation()))
+                
+                jump_address = None
+                
                 ex_mem_copy = {
                     "alu_result": alu_result,
-                    "store_data": op_2,
-                    "reg_dst": reg_dst,
+                    "store_data": id_ex_reg.get_op_2(),
+                    "reg_dst": id_ex_reg.get_reg_dst(),
                     "empty": False,
                     "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
                 }
 
-            return (ex_mem_copy, control_unit.get_id_ex_control(), jump_address)
+            return (ex_mem_copy, jump_address)
      
     def memory_access(self):
         if self.pipeline.get_ex_mem_pr().is_empty():
@@ -289,19 +310,19 @@ class ProcessingUnit:
     def is_finished(self):
         # Check PC in bounds 
         return (
-            self.instruction_mem.dir_out_of_bonds(self.pc.get_value()) &
-            self.pipeline.get_if_id_pr().is_empty() &
-            self.pipeline.get_id_ex_pr().is_empty() &
-            self.pipeline.get_ex_mem_pr().is_empty() &
+            self.instruction_mem.is_out_of_bounds(self.pc.get_value()) and
+            self.pipeline.get_if_id_pr().is_empty() and
+            self.pipeline.get_id_ex_pr().is_empty() and
+            self.pipeline.get_ex_mem_pr().is_empty() and
             self.pipeline.get_mem_wb_pr().is_empty()
         )
 
-    def upload_ex_mem_reg(self, ex_mem_copy):
-        self.pipeline.get_ex_mem_pr().upload_reg(
+    def update_ex_mem_reg(self, ex_mem_copy):
+        self.pipeline.get_ex_mem_pr().update_reg(
             ex_mem_copy["reg_dst"],
             ex_mem_copy["alu_result"],
             ex_mem_copy["store_data"],
-            ex_mem_copy["empty"]
+            True    # empty
         )
         # For printing
         self.pipeline.get_ex_mem_pr().set_instr_pc(
@@ -309,6 +330,7 @@ class ProcessingUnit:
         )
 
     def print_execution(self):
+
         print("====================")
         pc = self.pipeline.get_if_id_pr().get_instr_pc()
         print(f"IF_ID:\n\t{pc} : {self.instruction_mem.read(pc)}")
@@ -321,3 +343,7 @@ class ProcessingUnit:
 
         pc = self.pipeline.get_mem_wb_pr().get_instr_pc()
         print(f"MEM_WB:\n\t{pc} : {self.instruction_mem.read(pc)}")
+
+    def get_pipeline(self):
+        return self.pipeline
+    

@@ -48,7 +48,7 @@ class IF_ID_PipelineRegister:
         # For printing
         self.instr_pc = None 
 
-    def upload_reg(self, next_pc, instr):
+    def update_reg(self, next_pc, instr):
         self.next_pc = next_pc
         self.instr = instr
         self.empty = False
@@ -56,8 +56,8 @@ class IF_ID_PipelineRegister:
     def is_empty(self):
         return self.empty
 
-    def set_empty(self, bool):
-        self.empty = bool
+    def set_empty(self, empty):
+        self.empty = empty
 
     def get_instr(self):
         return self.instr
@@ -81,7 +81,7 @@ class ID_EX_PipelineRegister:
         # For printing
         self.instr_pc = None 
 
-    def upload_reg(self, reg_dst, op_1, op_2, address_value):
+    def update_reg(self, reg_dst, op_1, op_2, address_value):
         self.reg_dst = reg_dst
         self.op_1 = op_1
         self.op_2 = op_2
@@ -89,10 +89,10 @@ class ID_EX_PipelineRegister:
         self.empty = False
 
     def is_empty(self):
-            return self.empty
+        return self.empty
 
-    def set_empty(self, bool):
-        self.empty = bool
+    def set_empty(self, empty):
+        self.empty = empty
 
     def get_reg_dst(self):
         return self.reg_dst 
@@ -123,7 +123,7 @@ class EX_MEM_PipelineRegister:
         # For printing
         self.instr_pc = None
 
-    def upload_reg(self, reg_dst, alu_result, store_data, empty):
+    def update_reg(self, reg_dst, alu_result, store_data, empty):
         self.reg_dst = reg_dst
         self.alu_result = alu_result
         self.store_data = store_data
@@ -132,8 +132,8 @@ class EX_MEM_PipelineRegister:
     def is_empty(self):
             return self.empty
 
-    def set_empty(self, bool):
-        self.empty = bool
+    def set_empty(self, empty):
+        self.empty = empty
 
     # For printing
     def get_instr_pc(self):
@@ -151,16 +151,16 @@ class MEM_WB_PipelineRegister:
         # For printing
         self.instr_pc = None 
 
-    def upload_reg(self, write_data, reg_dst):
+    def update_reg(self, write_data, reg_dst):
         self.write_data = write_data
         self.reg_dst = reg_dst
         self.empty = False
 
     def is_empty(self):
-            return self.empty
+        return self.empty
 
-    def set_empty(self, bool):
-        self.empty = bool
+    def set_empty(self, empty):
+        self.empty = empty
 
     # For printing
     def get_instr_pc(self):

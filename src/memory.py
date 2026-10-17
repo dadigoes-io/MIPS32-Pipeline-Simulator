@@ -3,8 +3,8 @@ class Memory:
     def __init__(self):
         self.mem = {}
 
-    def read(self, dir):
-        return self.mem.get(dir)
+    def read(self, address):
+        return self.mem.get(address)
 
 class InstructionMemory (Memory):
 
@@ -12,8 +12,8 @@ class InstructionMemory (Memory):
         super().__init__()
         self.labels = {}
 
-    def read_program(self, programFile):
-        file = open(programFile, "r")
+    def read_program(self, program_file):
+        file = open(program_file, "r")
         line = file.readline()
         i = 0
         while line:
@@ -33,19 +33,19 @@ class InstructionMemory (Memory):
 
     def _replace_labels(self):
 
-        for instr_dir in self.mem.keys():
-            aux_label = self.mem[instr_dir].split()[-1]
+        for instr_address in self.mem.keys():
+            aux_label = self.mem[instr_address].split()[-1]
 
             if aux_label in self.labels.keys():            
-                new_line = self.mem[instr_dir].replace(aux_label, str(self.labels[aux_label] - instr_dir))
-                self.mem[instr_dir] = new_line
+                new_line = self.mem[instr_address].replace(aux_label, str(self.labels[aux_label] - instr_address))
+                self.mem[instr_address] = new_line
 
     def print_mem(self):
         for k in self.mem.keys():
             print(f"{k} : {self.mem.get(k)}")
 
-    def dir_out_of_bonds(self, dir):
-        return dir > max(self.mem.keys())
+    def is_out_of_bounds(self, address):
+        return address > max(self.mem.keys())
     
     def _is_instruction(self, line):
         return '$' in line or "j " in line
@@ -59,5 +59,5 @@ class DataMemory (Memory):
     def __init__(self):
         super().__init__()
 
-    def write(self, dir, value):
-        self.mem[dir] = value
+    def write(self, address, value):
+        self.mem[address] = value
