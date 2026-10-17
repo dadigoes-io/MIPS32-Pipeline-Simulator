@@ -38,13 +38,12 @@ class ProcessingUnit:
         self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
         #if_id_reg.set_next_pc(pc)
 
-    def instruction_decode(self):
+    def instruction_decode(self, control_unit: ControlUnit):
 
         if self.pipeline.get_if_id_pr().is_empty():
             self.pipeline.get_id_ex_pr().set_empty(True)
-            alu_type_op = None
-            control_signals = None
-            
+            self.control_unit.flush_id_ex(None, None)
+
         else:
             instr = self.pipeline.get_if_id_pr().get_instr()
             instr = instr.split()
@@ -222,16 +221,19 @@ class ProcessingUnit:
                         "RegWrite": False,
                         "RegDst" : False 
                     }
-
+            
             # Update ID_EX Register
             self.pipeline.get_id_ex_pr().update_reg(reg_dst, op_1, op_2, address_value)
+
+            # Generate control signals for ex
+            self.control_unit.id_to_ex(control_signals, alu_type_op)
 
         # For printing
         self.pipeline.get_id_ex_pr().set_instr_pc(
             self.pipeline.get_if_id_pr().get_instr_pc()
         )
 
-        return (alu_type_op, control_signals)
+
         
     def execute(self, control_unit: ControlUnit):
 
@@ -291,7 +293,7 @@ class ProcessingUnit:
 
             return (ex_mem_copy, jump_address)
      
-    def memory_access(self):
+    def memory_access(self, control_unit: ControlUnit):
         if self.pipeline.get_ex_mem_pr().is_empty():
             self.pipeline.get_mem_wb_pr().set_empty(True)
 
@@ -303,7 +305,7 @@ class ProcessingUnit:
             self.pipeline.get_ex_mem_pr().get_instr_pc()
         )
 
-    def write_back(self):
+    def write_back(self, control_unit: ControlUnit):
         if not self.pipeline.get_mem_wb_pr().is_empty():
             print("")
 

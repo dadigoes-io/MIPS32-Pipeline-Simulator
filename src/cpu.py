@@ -39,11 +39,7 @@ class CPU:
                 self.control_unit.flush_ex_mem()
             
             # ID
-            (alu_type_op, control_signals_id) = self.processing_unit.instruction_decode()
-            if not self.processing_unit.get_pipeline().get_id_ex_pr().is_empty():
-                self.control_unit.id_to_ex(control_signals_id, alu_type_op)
-            else:
-                self.control_unit.flush_id_ex()
+            self.processing_unit.instruction_decode(self.control_unit)
 
             # IF
             pc_src = (self.control_unit.get_ex_mem_control()["Jump"] or
