@@ -5,22 +5,20 @@ class ControlUnit:
         self.id_ex_control = {
             # ID_EX
             "ALUSrc" : None,
-            # EX_MEM
             "Jump" : None,
             "Branch" : None,
             "BranchN" : None,
+            # EX_MEM
             "MemWrite": None,
             "MemRead": None,
             # MEM_WB
             "MemtoReg" : None,
             "RegWrite": None,
-            "RegDst" : None, # Necesario?
+            "RegDst" : None,
         }
 
         self.ex_mem_control = {
             # EX_MEM
-            "Jump" : None,
-            "Branch" : None,
             "MemWrite": None,
             "MemRead": None,
             # MEM_WB

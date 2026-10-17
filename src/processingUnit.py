@@ -42,7 +42,7 @@ class ProcessingUnit:
 
         if self.pipeline.get_if_id_pr().is_empty():
             self.pipeline.get_id_ex_pr().set_empty(True)
-            self.control_unit.flush_id_ex(None, None)
+            control_unit.flush_id_ex()
 
         else:
             instr = self.pipeline.get_if_id_pr().get_instr()
@@ -58,7 +58,7 @@ class ProcessingUnit:
                     # Load registers from Register File
                     alu_type_op = ALUOperation.ADD
                     reg_dst = instr[1].split(",")[0]   # $dest
-                    op_1 = self.register_file.load_value(base.rstrip(")"))         # $base
+                    op_1 = int(self.register_file.load_value(base.rstrip(")")))         # $base
                     op_2 = None
                     address_value = offset          # offset
 
@@ -83,9 +83,9 @@ class ProcessingUnit:
 
                     alu_type_op = ALUOperation.ADD
                     reg_dst = None
-                    op_1 = self.register_file.load_value(base.rstrip(")"))          # $base
-                    op_2 = self.register_file.load_value(instr[1]).rstrip(",")                  # $source
-                    address_value = offset          # offset
+                    op_1 = int(self.register_file.load_value(base.rstrip(")")))          # $base
+                    op_2 = int(self.register_file.load_value(instr[1]).rstrip(","))                 # $source
+                    address_value = int(offset)          # offset
 
                     control_signals = {
                         # ID_EX
@@ -107,9 +107,9 @@ class ProcessingUnit:
                     alu_type_op = ALUOperation.SUB 
 
                     reg_dst = None
-                    op_1 = self.register_file.load_value(instr[1].rstrip(","))
-                    op_2 = self.register_file.load_value(instr[2].rstrip(","))
-                    address_value = instr[3]
+                    op_1 = int(self.register_file.load_value(instr[1].rstrip(",")))
+                    op_2 = int(self.register_file.load_value(instr[2].rstrip(",")))
+                    address_value = int(instr[3])
 
                     control_signals = {
                         # ID_EX
@@ -141,9 +141,9 @@ class ProcessingUnit:
 
                     # Load registers from Register File
                     reg_dst = instr[1].rstrip(",")
-                    op_1 = self.register_file.load_value(instr[2].rstrip(","))
+                    op_1 = int(self.register_file.load_value(instr[2].rstrip(",")))
                     op_2 = None
-                    address_value = instr[3]
+                    address_value = int(instr[3])
 
                     control_signals = {
                         # ID_EX
@@ -179,8 +179,8 @@ class ProcessingUnit:
 
                     # Load registers from Register File
                     reg_dst = instr[1].rstrip(",")
-                    op_1 = self.register_file.load_value(instr[2].rstrip(","))
-                    op_2 = self.register_file.load_value(instr[3])
+                    op_1 = int(self.register_file.load_value(instr[2].rstrip(",")))
+                    op_2 = int(self.register_file.load_value(instr[3]))
                     address_value = None
 
                     control_signals = {
@@ -205,7 +205,7 @@ class ProcessingUnit:
                     reg_dst = None
                     op_1 = None
                     op_2 = None
-                    address_value = instr[1]
+                    address_value = int(instr[1])
 
                     control_signals = {
                         # ID_EX
@@ -226,15 +226,13 @@ class ProcessingUnit:
             self.pipeline.get_id_ex_pr().update_reg(reg_dst, op_1, op_2, address_value)
 
             # Generate control signals for ex
-            self.control_unit.id_to_ex(control_signals, alu_type_op)
+            control_unit.id_to_ex(control_signals, alu_type_op)
 
         # For printing
         self.pipeline.get_id_ex_pr().set_instr_pc(
             self.pipeline.get_if_id_pr().get_instr_pc()
         )
 
-
-        
     def execute(self, control_unit: ControlUnit):
 
         ex_mem_copy = {
@@ -277,9 +275,9 @@ class ProcessingUnit:
                     jump_address = None
                     
             else:
-                alu_result = int(self.alu.operation(int(id_ex_reg.get_op_1()),
-                                                int(id_ex_reg.get_address_value()) if control["ALUSrc"] else int(id_ex_reg.get_op_2()),
-                                                control_unit.get_alu_operation()))
+                alu_result = self.alu.operation(id_ex_reg.get_op_1(),
+                                                id_ex_reg.get_address_value() if control["ALUSrc"] else id_ex_reg.get_op_2(),
+                                                control_unit.get_alu_operation())
                 
                 jump_address = None
                 
@@ -296,9 +294,23 @@ class ProcessingUnit:
     def memory_access(self, control_unit: ControlUnit):
         if self.pipeline.get_ex_mem_pr().is_empty():
             self.pipeline.get_mem_wb_pr().set_empty(True)
-
         else:
-            self.pipeline.get_mem_wb_pr().set_empty(False)
+            address = self.get_pipeline().get_ex_mem_pr().get_alu_result()
+            if control_unit.get_ex_mem_control()["MemWrite"]:
+                self.data_mem.write(address, self.get_pipeline().get_ex_mem_pr().get_store_data())
+                alu_data = None
+                mem_data = None
+            else:
+                if control_unit.get_ex_mem_control()["MemRead"]:
+                    alu_data = None
+                    mem_data = self.data_mem.read(address)
+                else:
+                    alu_data = self.get_pipeline().get_ex_mem_pr().get_alu_result()
+                    mem_data = None
+
+            self.pipeline.get_mem_wb_pr().update_reg(alu_data,
+                                                     mem_data,
+                                                     self.get_pipeline().get_ex_mem_pr().get_reg_dst())
 
         # For printing
         self.pipeline.get_mem_wb_pr().set_instr_pc(
@@ -306,6 +318,15 @@ class ProcessingUnit:
         )
 
     def write_back(self, control_unit: ControlUnit):
+        # MemtoReg
+        write_data = (self.get_pipeline().get_mem_wb_pr().get_mem_data()
+        if control_unit.get_mem_wb_control()["MemtoReg"]
+        else self.get_pipeline().get_mem_wb_pr().get_alu_data())
+
+        # RegWrite
+        if control_unit.get_mem_wb_control()["RegWrite"]:
+            self.data_mem.write(self.get_pipeline().get_mem_wb_pr().get_reg_dst() , write_data)
+
         if not self.pipeline.get_mem_wb_pr().is_empty():
             print("")
 
@@ -324,7 +345,7 @@ class ProcessingUnit:
             ex_mem_copy["reg_dst"],
             ex_mem_copy["alu_result"],
             ex_mem_copy["store_data"],
-            True    # empty
+            ex_mem_copy["empty"]
         )
         # For printing
         self.pipeline.get_ex_mem_pr().set_instr_pc(

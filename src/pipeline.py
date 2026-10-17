@@ -135,6 +135,15 @@ class EX_MEM_PipelineRegister:
     def set_empty(self, empty):
         self.empty = empty
 
+    def get_reg_dst(self):
+        return self.reg_dst
+
+    def get_alu_result(self):
+        return self.alu_result
+
+    def get_store_data(self):
+        return self.store_data
+
     # For printing
     def get_instr_pc(self):
         return self.instr_pc
@@ -145,14 +154,16 @@ class EX_MEM_PipelineRegister:
 class MEM_WB_PipelineRegister:
 
     def __init__(self):
-        self.write_data = None
+        self.alu_data = None
+        self.mem_data = None
         self.reg_dst = None
         self.empty = True
         # For printing
         self.instr_pc = None 
 
-    def update_reg(self, write_data, reg_dst):
-        self.write_data = write_data
+    def update_reg(self, alu_data, mem_data, reg_dst):
+        self.alu_data = alu_data
+        self.mem_data = mem_data
         self.reg_dst = reg_dst
         self.empty = False
 
@@ -161,6 +172,15 @@ class MEM_WB_PipelineRegister:
 
     def set_empty(self, empty):
         self.empty = empty
+
+    def get_alu_data(self):
+        return self.alu_data
+
+    def get_mem_data(self):
+            return self.mem_data
+
+    def get_reg_dst(self):
+                return self.reg_dst
 
     # For printing
     def get_instr_pc(self):

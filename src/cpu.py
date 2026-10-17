@@ -19,13 +19,13 @@ class CPU:
         while not self.processing_unit.is_finished():
 
             # WB
-            self.processing_unit.write_back()
+            self.processing_unit.write_back(self.control_unit)
 
             # EX execution without store
             (ex_mem_copy, jump_address) = self.processing_unit.execute(self.control_unit)
 
             # MEM
-            self.processing_unit.memory_access()
+            self.processing_unit.memory_access(self.control_unit)
             if not self.processing_unit.get_pipeline().get_mem_wb_pr().is_empty():
                 self.control_unit.mem_to_wb()
             else:
@@ -42,8 +42,7 @@ class CPU:
             self.processing_unit.instruction_decode(self.control_unit)
 
             # IF
-            pc_src = (self.control_unit.get_ex_mem_control()["Jump"] or
-                     (self.control_unit.get_ex_mem_control()["Branch"] and jump_address != None))
+            pc_src = (jump_address is not None)
             
             self.processing_unit.instruction_fetch(pc_src, jump_address)
             
@@ -58,7 +57,7 @@ def main():
 
     # Processing Unity creation
     instr_mem = InstructionMemory()
-    instr_mem.read_program("programs/programa_prueba.txt")
+    instr_mem.read_program("programs/programa_Practica2 copy.txt")
     instr_mem.print_mem()
 
     processing_unit = ProcessingUnit(
