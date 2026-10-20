@@ -74,17 +74,19 @@ class ID_EX_PipelineRegister:
 
     def __init__(self):
         self.reg_dst = None
-        self.op_1 = None
-        self.op_2 = None
+        self.op_1_val = None
+        self.op_2_val = None
+        self.op_1_reg = None
+        self.op_2_reg = None
         self.address_value = None
         self.empty = True
         # For printing
         self.instr_pc = None 
 
-    def update_reg(self, reg_dst, op_1, op_2, address_value):
+    def update_reg(self, reg_dst, op_1_val, op_2_val, address_value):
         self.reg_dst = reg_dst
-        self.op_1 = op_1
-        self.op_2 = op_2
+        self.op_1_val = op_1_val
+        self.op_2_val = op_2_val
         self.address_value = address_value
         self.empty = False
 
@@ -97,11 +99,11 @@ class ID_EX_PipelineRegister:
     def get_reg_dst(self):
         return self.reg_dst 
 
-    def get_op_1(self):
-        return self.op_1
+    def get_op_1_val(self):
+        return self.op_1_val
 
-    def get_op_2(self):
-        return self.op_2
+    def get_op_2_val(self):
+        return self.op_2_val
 
     def get_address_value(self):
         return self.address_value

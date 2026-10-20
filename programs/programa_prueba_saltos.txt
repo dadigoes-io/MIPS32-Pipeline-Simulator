@@ -1,0 +1,5 @@
+beq $zero, $zero, salto
+addi $t6, $zero, 6
+
+salto:
+addi $t7, $zero, 7

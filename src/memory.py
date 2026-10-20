@@ -61,3 +61,7 @@ class DataMemory (Memory):
 
     def write(self, address, value):
         self.mem[address] = value
+    
+    def print_data_mem(self):
+        for k in self.mem.keys():
+            print(f"{k}: {self.mem[k]}")

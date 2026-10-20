@@ -4,34 +4,34 @@ class ControlUnit:
 
         self.id_ex_control = {
             # ID_EX
-            "ALUSrc" : None,
-            "Jump" : None,
-            "Branch" : None,
-            "BranchN" : None,
+            "ALUSrc" : False,
+            "Jump" : False,
+            "Branch" : False,
+            "BranchN" : False,
             # EX_MEM
-            "MemWrite": None,
-            "MemRead": None,
+            "MemWrite": False,
+            "MemRead": False,
             # MEM_WB
-            "MemtoReg" : None,
-            "RegWrite": None,
-            "RegDst" : None,
+            "MemtoReg" : False,
+            "RegWrite": False,
+            "RegDst" : False,
         }
 
         self.ex_mem_control = {
             # EX_MEM
-            "MemWrite": None,
-            "MemRead": None,
+            "MemWrite": False,
+            "MemRead": False,
             # MEM_WB
-            "MemtoReg" : None,
-            "RegWrite": None, 
-            "RegDst" : None 
+            "MemtoReg" : False,
+            "RegWrite": False, 
+            "RegDst" : False 
         }
 
         self.mem_wb_control = {
             # MEM_WB
-            "MemtoReg" : None,
-            "RegWrite": None,
-            "RegDst" : None     
+            "MemtoReg" : False,
+            "RegWrite": False,
+            "RegDst" : False     
         }
 
         self.alu_operation = None
@@ -62,8 +62,6 @@ class ControlUnit:
         for k in self.mem_wb_control.keys():
             self.mem_wb_control[k] = False
 
-
-
     def get_id_ex_control(self):
         return self.id_ex_control
 
@@ -75,3 +73,4 @@ class ControlUnit:
 
     def get_alu_operation(self):
         return self.alu_operation
+        

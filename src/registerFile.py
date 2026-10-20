@@ -42,3 +42,8 @@ class RegisterFile:
 
     def load_value(self, k):
         return self.mem[k]
+
+    def print_register_file(self):
+        for k in self.mem.keys():
+            if self.mem[k] is not None:
+                print(f"{k}: {self.mem[k]}")
