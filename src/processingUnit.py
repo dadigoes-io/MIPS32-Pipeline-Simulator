@@ -39,7 +39,7 @@ class ProcessingUnit:
         self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
         #if_id_reg.set_next_pc(pc)
 
-    def instruction_decode(self, control_unit: ControlUnit, forwarding_unit: ForwardingUnit, alu_data_ex, alu_data_mem):
+    def instruction_decode(self, control_unit: ControlUnit, result_ex, reg_dst_ex, result_mem, reg_dst_mem):
 
         # For printing
         self.pipeline.get_id_ex_pr().set_instr_pc(
@@ -256,16 +256,19 @@ class ProcessingUnit:
                         "RegDst" : False 
                     }
 
-            # Forwarding
-            if forwarding_unit.is_raw_ex_op_1(op_1_reg): 
-                op_1_val = alu_data_ex
-            elif forwarding_unit.is_raw_mem_op_1(op_1_reg):
-                op_1_val = alu_data_mem
+            # Hazard detection
 
-            if forwarding_unit.is_raw_ex_op_2(op_2_reg):
-                op_2_val = alu_data_ex
-            elif forwarding_unit.is_raw_mem_op_2(op_2_reg):
-                op_2_val = alu_data_mem         
+
+            # Forwarding
+            if ForwardingUnit.is_raw(op_1_reg, reg_dst_ex, control_unit.get_ex_mem_control()): 
+                op_1_val = result_ex
+            elif ForwardingUnit.is_raw(op_1_reg, reg_dst_mem, control_unit.get_mem_wb_control()):
+                op_1_val = result_mem
+
+            if ForwardingUnit.is_raw(op_2_reg, reg_dst_ex, control_unit.get_ex_mem_control()):
+                op_2_val = result_ex
+            elif ForwardingUnit.is_raw(op_2_reg, reg_dst_mem, control_unit.get_mem_wb_control()):
+                op_2_val = result_mem         
             
             # Update ID_EX Register
             self.pipeline.get_id_ex_pr().update_reg(reg_dst, op_1_val, op_2_val, address_value)
@@ -357,8 +360,10 @@ class ProcessingUnit:
 
             reg_dst = self.get_pipeline().get_ex_mem_pr().get_reg_dst()
             self.pipeline.get_mem_wb_pr().update_reg(alu_data, mem_data, reg_dst)
+
+            mem_to_reg_data = mem_data if control_unit.get_mem_wb_control()["MemtoReg"] else alu_data
             
-            return alu_data, reg_dst       
+            return mem_to_reg_data, reg_dst       
 
     def write_back(self, control_unit: ControlUnit):
         if not self.get_pipeline().get_mem_wb_pr().is_empty():
@@ -398,7 +403,7 @@ class ProcessingUnit:
 
         return ex_mem_copy["alu_result"], ex_mem_copy["reg_dst"]   
 
-    def print_execution(self,cycle):
+    def print_execution(self, cycle):
         
         YELLOW = "\033[93m"
         RED = "\033[91m"
@@ -429,9 +434,6 @@ class ProcessingUnit:
 
         print("__________________________________\n")
         print("Detected RAWs:")
-
-
-        
 
     def get_pipeline(self):
         return self.pipeline

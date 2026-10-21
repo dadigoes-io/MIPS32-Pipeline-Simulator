@@ -10,10 +10,9 @@ from forwardingUnit import ForwardingUnit
 
 class CPU:
 
-    def __init__(self, processing_unit, control_unit, forwarding_unit):
+    def __init__(self, processing_unit, control_unit):
         self.processing_unit = processing_unit
         self.control_unit = control_unit
-        self.forwarding_unit = forwarding_unit
 
     def run(self):
         cycle = 0
@@ -29,21 +28,18 @@ class CPU:
             (ex_mem_copy, jump_address) = self.processing_unit.execute(self.control_unit)
 
             # MEM
-            alu_result_mem, reg_dst_mem = self.processing_unit.memory_access(self.control_unit)
+            result_mem, reg_dst_mem = self.processing_unit.memory_access(self.control_unit)
             if not self.processing_unit.get_pipeline().get_mem_wb_pr().is_empty():
                 self.control_unit.mem_to_wb()
             else:
                 self.control_unit.flush_mem_wb()
 
             # EX upload Registers
-            alu_result_ex, reg_dst_ex = self.processing_unit.update_ex_mem_reg(ex_mem_copy)
+            result_ex, reg_dst_ex = self.processing_unit.update_ex_mem_reg(ex_mem_copy)
             if not self.processing_unit.get_pipeline().get_ex_mem_pr().is_empty():
                 self.control_unit.ex_to_mem()
             else:
                 self.control_unit.flush_ex_mem()
-
-            self.forwarding_unit.set_ex_regs(reg_dst_ex, self.control_unit.get_ex_mem_control())
-            self.forwarding_unit.set_mem_regs(reg_dst_mem, self.control_unit.get_mem_wb_control())
             
             # ID
             if jump_address is not None:
@@ -52,9 +48,10 @@ class CPU:
                 self.control_unit.flush_id_ex()
             else:
                 self.processing_unit.instruction_decode(self.control_unit,
-                                                    self.forwarding_unit,
-                                                    alu_result_ex,
-                                                    alu_result_mem)
+                                                        result_ex,
+                                                        reg_dst_ex,
+                                                        result_mem,
+                                                        reg_dst_mem)
 
             # IF
             pc_src = (jump_address is not None)
@@ -87,7 +84,7 @@ def main():
     forwarding_unit = ForwardingUnit()
 
     # Central Processing Unity creation
-    cpu = CPU(processing_unit, control_unit, forwarding_unit)
+    cpu = CPU(processing_unit, control_unit)
 
     cpu.run()
 
