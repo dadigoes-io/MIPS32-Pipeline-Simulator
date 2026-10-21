@@ -1,49 +1,17 @@
-.text
-main:
-    # Escrituras y lecturas en memoria
-    addi $t0, $zero, 5
-    addi $t1, $zero, 9
+addi $t0, $zero, 5
+sw $t0, 0($sp)
+lw $t1, 0($sp)
+add $t2, $t1, $t0
 
-    sw $t0, 0($sp)
-    sw $t1, 4($sp)
+addi $t3, $t2, 1
+sw $t3, 4($sp)
 
-    lw $t2, 0($sp)
-    lw $t3, 4($sp)
+lw $t4, 4($sp)
+addi $s0, $zero, 3
+add $t5, $t4, $s0
 
-    # Evitamos un RAW inmediato de lw
-    addi $s0, $zero, 1
-    addi $s1, $zero, 2
+beq $t5, $t5, fin
+addi $s1, $zero, 99
 
-    # Comprobar que lw recupero los valores
-    add $s2, $t2, $t3
-
-    # BEQ tomado: estas instrucciones deben anularse
-    beq $s2, $s2, salto_beq
-    addi $s3, $zero, 99
-    addi $s4, $zero, 99
-
-salto_beq:
-    # BNE tomado
-    bne $t2, $t3, salto_bne
-    addi $s5, $zero, 99
-
-salto_bne:
-    # BNE no tomado
-    bne $zero, $zero, no_salto
-    addi $t4, $zero, 7
-
-no_salto:
-    # Salto incondicional
-    j siguiente
-    addi $t5, $zero, 99
-    addi $t6, $zero, 99
-
-siguiente:
-    # Salto hacia atras
-    addi $s6, $zero, 2
-
-bucle:
-    addi $s6, $s6, -1
-    bne $s6, $zero, bucle
-
-    addi $t7, $zero, 42
+fin:
+addi $s2, $zero, 7

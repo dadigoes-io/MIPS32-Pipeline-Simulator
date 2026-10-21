@@ -6,6 +6,7 @@ from pipeline import *
 from enums import *
 from controlUnit import ControlUnit
 from forwardingUnit import ForwardingUnit
+from hazardDetectionUnit import HazardDetectionUnit
 
 class ProcessingUnit:
 
@@ -16,39 +17,37 @@ class ProcessingUnit:
         self.register_file = register_file
         self.alu = alu
         self.pipeline = pipeline
+        self.raw_list = []
 
-    def instruction_fetch(self, pc_src, jump_address):
-        
-        # Load pc from IF_ID Register
-        pc_aux =  jump_address if pc_src else self.pc.get_value()
+    def instruction_fetch(self, pc_src, jump_address, stall_signal):
 
-        if pc_src:
-            self.pc.set_value(pc_aux)
-        
-        if not self.instruction_mem.is_out_of_bounds(pc_aux):
+        if not stall_signal:
+            # Load pc from IF_ID Register
+            pc_aux =  jump_address if pc_src else self.pc.get_value()
 
-            self.pipeline.get_if_id_pr().update_reg(
-                self.pc.add_four(),
-                self.instruction_mem.read(pc_aux)
-            )
+            if pc_src:
+                self.pc.set_value(pc_aux)
+            
+            if not self.instruction_mem.is_out_of_bounds(pc_aux):
 
-        else:
-            self.pipeline.get_if_id_pr().set_empty(True)
+                self.pipeline.get_if_id_pr().update_reg(
+                    self.pc.add_four(),
+                    self.instruction_mem.read(pc_aux)
+                )
 
-        # For printing
-        self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
-        #if_id_reg.set_next_pc(pc)
+            else:
+                self.pipeline.get_if_id_pr().set_empty(True)
+
+            # For printing
+            self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
+            #if_id_reg.set_next_pc(pc)
 
     def instruction_decode(self, control_unit: ControlUnit, result_ex, reg_dst_ex, result_mem, reg_dst_mem):
-
-        # For printing
-        self.pipeline.get_id_ex_pr().set_instr_pc(
-            self.pipeline.get_if_id_pr().get_instr_pc()
-        )
 
         if self.pipeline.get_if_id_pr().is_empty():
             self.pipeline.get_id_ex_pr().set_empty(True)
             control_unit.flush_id_ex()
+            return False
 
         else:
             instr = self.pipeline.get_if_id_pr().get_instr()
@@ -71,8 +70,6 @@ class ProcessingUnit:
                     op_1_val = self.register_file.load_value(op_1_reg)         # $base
                     op_2_val = None
                     address_value = int(offset)          # offset
-
-                    
 
                     control_signals = {
                         # ID_EX
@@ -257,7 +254,14 @@ class ProcessingUnit:
                     }
 
             # Hazard detection
-            
+            is_raw_ex, is_load_raw = HazardDetectionUnit.is_raw_ex(op_1_reg, op_2_reg, reg_dst_ex, control_unit.get_ex_mem_control())
+            if is_raw_ex:
+                self.raw_list.append((self.pipeline.get_if_id_pr().get_instr_pc(),
+                                      self.pipeline.get_id_ex_pr().get_instr_pc()))
+
+            if HazardDetectionUnit.is_raw_mem(op_1_reg, op_2_reg, reg_dst_mem, control_unit.get_mem_wb_control()):
+                self.raw_list.append((self.pipeline.get_if_id_pr().get_instr_pc(),
+                                      self.pipeline.get_ex_mem_pr().get_instr_pc())) 
 
             # Forwarding
             if ForwardingUnit.is_raw(op_1_reg, reg_dst_ex, control_unit.get_ex_mem_control()): 
@@ -275,6 +279,17 @@ class ProcessingUnit:
 
             # Generate control signals for ex
             control_unit.id_to_ex(control_signals, alu_type_op)
+
+            if is_load_raw:
+                self.pipeline.get_id_ex_pr().set_empty(True)
+                control_unit.flush_id_ex()
+
+            # For printing
+            self.pipeline.get_id_ex_pr().set_instr_pc(
+                self.pipeline.get_if_id_pr().get_instr_pc()
+            )
+
+            return is_load_raw        
 
     def execute(self, control_unit: ControlUnit):
 
@@ -361,7 +376,7 @@ class ProcessingUnit:
             reg_dst = self.get_pipeline().get_ex_mem_pr().get_reg_dst()
             self.pipeline.get_mem_wb_pr().update_reg(alu_data, mem_data, reg_dst)
 
-            mem_to_reg_data = mem_data if control_unit.get_mem_wb_control()["MemtoReg"] else alu_data
+            mem_to_reg_data = mem_data if control_unit.get_ex_mem_control()["MemtoReg"] else alu_data
             
             return mem_to_reg_data, reg_dst       
 
@@ -434,6 +449,9 @@ class ProcessingUnit:
 
         print("__________________________________\n")
         print("Detected RAWs:")
+        for pc_1,pc_2 in self.raw_list:
+            print(f"{pc_1} : {self.instruction_mem.read(pc_1)}\n")
+            print(f"{pc_2} : {self.instruction_mem.read(pc_2)}\n\n")
 
     def get_pipeline(self):
         return self.pipeline

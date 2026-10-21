@@ -31,7 +31,7 @@ class RegisterFile:
             "$k0": None,
             "$k1": None,
             "$gp": None,
-            "$sp": 4096,
+            "$sp": 512,
             "$fp": None,
             "$ra": None,
         }   

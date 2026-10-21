@@ -20,6 +20,7 @@ class CPU:
         while not self.processing_unit.is_finished():
 
             cycle+=1
+            stall_signal = False
             
             # WB
             self.processing_unit.write_back(self.control_unit)
@@ -47,7 +48,7 @@ class CPU:
                 self.processing_unit.get_pipeline().get_id_ex_pr().set_empty(True)
                 self.control_unit.flush_id_ex()
             else:
-                self.processing_unit.instruction_decode(self.control_unit,
+                stall_signal = self.processing_unit.instruction_decode(self.control_unit,
                                                         result_ex,
                                                         reg_dst_ex,
                                                         result_mem,
@@ -56,7 +57,7 @@ class CPU:
             # IF
             pc_src = (jump_address is not None)
             
-            self.processing_unit.instruction_fetch(pc_src, jump_address)
+            self.processing_unit.instruction_fetch(pc_src, jump_address, stall_signal)
             
             # Print execution
             self.processing_unit.print_execution(cycle)
