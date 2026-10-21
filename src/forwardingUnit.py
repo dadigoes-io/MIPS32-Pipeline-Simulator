@@ -1,9 +1,9 @@
 class ForwardingUnit:
 
         @staticmethod
-        def is_raw(op_reg, reg_dst_ex, ex_mem_control):
-            if ex_mem_control["RegWrite"] and op_reg is not None:
-                return op_reg == reg_dst_ex
+        def is_raw(op_reg, forward_reg_dst, forward_control):
+            if forward_control["RegWrite"] and forward_reg_dst is not None:
+                return op_reg == forward_reg_dst
             else:
                 return False
 

@@ -257,7 +257,7 @@ class ProcessingUnit:
                     }
 
             # Hazard detection
-
+            
 
             # Forwarding
             if ForwardingUnit.is_raw(op_1_reg, reg_dst_ex, control_unit.get_ex_mem_control()): 
