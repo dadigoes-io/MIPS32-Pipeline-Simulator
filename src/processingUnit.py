@@ -34,13 +34,14 @@ class ProcessingUnit:
                     self.pc.add_four(),
                     self.instruction_mem.read(pc_aux)
                 )
+                # For printing
+                self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
+                #if_id_reg.set_next_pc(pc)
 
             else:
                 self.pipeline.get_if_id_pr().set_empty(True)
 
-            # For printing
-            self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
-            #if_id_reg.set_next_pc(pc)
+        
 
     def instruction_decode(self, control_unit: ControlUnit, result_ex, reg_dst_ex, result_mem, reg_dst_mem):
 
@@ -257,11 +258,20 @@ class ProcessingUnit:
             is_raw_ex, is_load_raw = HazardDetectionUnit.is_raw_ex(op_1_reg, op_2_reg, reg_dst_ex, control_unit.get_ex_mem_control())
             if is_raw_ex:
                 self.raw_list.append((self.pipeline.get_if_id_pr().get_instr_pc(),
-                                      self.pipeline.get_id_ex_pr().get_instr_pc()))
+                                      self.pipeline.get_ex_mem_pr().get_instr_pc()))    # Corresponds to executed ex 
 
             if HazardDetectionUnit.is_raw_mem(op_1_reg, op_2_reg, reg_dst_mem, control_unit.get_mem_wb_control()):
                 self.raw_list.append((self.pipeline.get_if_id_pr().get_instr_pc(),
-                                      self.pipeline.get_ex_mem_pr().get_instr_pc())) 
+                                      self.pipeline.get_mem_wb_pr().get_instr_pc()))    # Corresponds to executed mem
+
+            if is_load_raw:
+                self.pipeline.get_id_ex_pr().set_empty(True)
+                control_unit.flush_id_ex()
+                # For printing
+                self.pipeline.get_id_ex_pr().set_instr_pc(
+                    self.pipeline.get_if_id_pr().get_instr_pc()
+                )
+                return True
 
             # Forwarding
             if ForwardingUnit.is_raw(op_1_reg, reg_dst_ex, control_unit.get_ex_mem_control()): 
@@ -277,19 +287,14 @@ class ProcessingUnit:
             # Update ID_EX Register
             self.pipeline.get_id_ex_pr().update_reg(reg_dst, op_1_val, op_2_val, address_value)
 
-            # Generate control signals for ex
-            control_unit.id_to_ex(control_signals, alu_type_op)
-
-            if is_load_raw:
-                self.pipeline.get_id_ex_pr().set_empty(True)
-                control_unit.flush_id_ex()
-
             # For printing
             self.pipeline.get_id_ex_pr().set_instr_pc(
                 self.pipeline.get_if_id_pr().get_instr_pc()
             )
 
-            return is_load_raw        
+            control_unit.id_to_ex(control_signals, alu_type_op)
+
+            return False        
 
     def execute(self, control_unit: ControlUnit):
 
@@ -427,31 +432,50 @@ class ProcessingUnit:
         RESET = "\033[0m"
 
         print(f"\n============== CYCLE {cycle} ==============")
-        pc = self.pipeline.get_if_id_pr().get_instr_pc()
-        print(f"{RED}IF_ID:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
+        pc = (self.pipeline.get_if_id_pr().get_instr_pc()
+              if not self.pipeline.get_if_id_pr().is_empty()
+              else None)
+        if pc is None:
+            print(f"{GREEN}IF_ID:\n\tBUBBLE{RESET}")
+        else:
+            print(f"{GREEN}IF_ID:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
 
-        pc = self.pipeline.get_id_ex_pr().get_instr_pc()
-        print(f"{GREEN}ID_EX:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
+        pc = (self.pipeline.get_id_ex_pr().get_instr_pc()
+              if not self.pipeline.get_id_ex_pr().is_empty()
+              else None)
+        if pc is None:
+            print(f"{YELLOW}ID_EX:\n\tBUBBLE{RESET}")
+        else:
+            print(f"{YELLOW}ID_EX:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
 
-        pc = self.pipeline.get_ex_mem_pr().get_instr_pc()
-        print(f"{YELLOW}EX_MEM:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
+        pc = (self.pipeline.get_ex_mem_pr().get_instr_pc()
+              if not self.pipeline.get_ex_mem_pr().is_empty()
+              else None)
+        if pc is None:
+            print(f"{CYAN}EX_MEM:\n\tBUBBLE{RESET}")
+        else:
+            print(f"{CYAN}EX_MEM:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
 
-        pc = self.pipeline.get_mem_wb_pr().get_instr_pc()
-        print(f"{CYAN}MEM_WB:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
+        pc = (self.pipeline.get_mem_wb_pr().get_instr_pc()
+              if not self.pipeline.get_mem_wb_pr().is_empty()
+              else None)
+        if pc is None:
+            print(f"{RED}MEM_WB:\n\tBUBBLE{RESET}")
+        else:
+            print(f"{RED}MEM_WB:\n\t{pc} : {self.instruction_mem.read(pc)}{RESET}")
 
-        print("__________________________________\n")
-        print("Register File:")
+        print("_______________ Register File _______________\n")
         self.register_file.print_register_file()
 
-        print("__________________________________\n")
-        print("Data Memory:")
+        print("________________ Data Memory ________________\n")
         self.data_mem.print_data_mem()
 
-        print("__________________________________\n")
-        print("Detected RAWs:")
+        print("_______________ Detected RAWs _______________\n")
         for pc_1,pc_2 in self.raw_list:
             print(f"{pc_1} : {self.instruction_mem.read(pc_1)}\n")
             print(f"{pc_2} : {self.instruction_mem.read(pc_2)}\n\n")
+
+        self.raw_list.clear()
 
     def get_pipeline(self):
         return self.pipeline

@@ -82,8 +82,6 @@ def main():
         Pipeline()
     )
 
-    forwarding_unit = ForwardingUnit()
-
     # Central Processing Unity creation
     cpu = CPU(processing_unit, control_unit)
 
