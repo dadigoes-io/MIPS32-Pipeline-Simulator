@@ -20,8 +20,10 @@ class InstructionMemory (Memory):
             # Remove comments and leftover spaces
             line = line.split('#')[0].strip()
 
-            if self._is_label(line):
-                self.labels[line[:-1]] = i
+            if ":" in line:
+                label, line = line.split(":")
+                self.labels[label.strip()] = i
+                line = line.strip()
 
             if self._is_instruction(line):
                 self.mem[i] = line
@@ -34,10 +36,10 @@ class InstructionMemory (Memory):
     def _replace_labels(self):
 
         for instr_address in self.mem.keys():
-            aux_label = self.mem[instr_address].split()[-1]
+            aux_label = self.mem[instr_address].replace(",", " ").split()[-1]
 
             if aux_label in self.labels.keys():            
-                new_line = self.mem[instr_address].replace(aux_label, str(self.labels[aux_label] - instr_address))
+                new_line = self.mem[instr_address].rsplit(aux_label, 1)[0] + str(self.labels[aux_label] - instr_address)
                 self.mem[instr_address] = new_line
 
     def print_mem(self):
@@ -48,10 +50,10 @@ class InstructionMemory (Memory):
         return address > max(self.mem.keys())
     
     def _is_instruction(self, line):
-        return '$' in line or "j " in line
-
-    def _is_label(self, line):
-        return line.endswith(':')
+        if not line:
+            return False    # Case line was a comment
+        
+        return ('$' in line) or (line.split()[0] == "j")
     
     
 class DataMemory (Memory):

@@ -62,7 +62,6 @@ class IF_ID_PipelineRegister:
     def get_instr(self):
         return self.instr
     
-
     # For printing
     def get_instr_pc(self):
         return self.instr_pc

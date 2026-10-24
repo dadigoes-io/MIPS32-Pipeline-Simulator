@@ -6,7 +6,6 @@ from memory import DataMemory
 from registerFile import RegisterFile
 from alu import ALU
 from pipeline import Pipeline
-from forwardingUnit import ForwardingUnit
 
 class CPU:
 
@@ -16,6 +15,9 @@ class CPU:
 
     def run(self):
         cycle = 0
+
+        # Print execution
+        self.processing_unit.print_execution(cycle)
 
         while not self.processing_unit.is_finished():
 
@@ -58,10 +60,10 @@ class CPU:
             pc_src = (jump_address is not None)
             
             self.processing_unit.instruction_fetch(pc_src, jump_address, stall_signal)
-            
+
             # Print execution
             self.processing_unit.print_execution(cycle)
-
+        
             input()
 
 def main():
@@ -70,7 +72,7 @@ def main():
 
     # Processing Unity creation
     instr_mem = InstructionMemory()
-    instr_mem.read_program("programs/program_test.txt")
+    instr_mem.read_program("programs/programa_Practica2 copy.txt")
     instr_mem.print_mem()
 
     processing_unit = ProcessingUnit(

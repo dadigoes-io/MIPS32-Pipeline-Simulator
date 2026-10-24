@@ -14,7 +14,6 @@ class ControlUnit:
             # MEM_WB
             "MemtoReg" : False,
             "RegWrite": False,
-            "RegDst" : False,
         }
 
         self.ex_mem_control = {
@@ -24,18 +23,15 @@ class ControlUnit:
             # MEM_WB
             "MemtoReg" : False,
             "RegWrite": False, 
-            "RegDst" : False 
         }
 
         self.mem_wb_control = {
             # MEM_WB
             "MemtoReg" : False,
             "RegWrite": False,
-            "RegDst" : False     
         }
 
         self.alu_operation = None
-
 
     def id_to_ex(self, control_signals, alu_operation):
         for k in self.id_ex_control.keys():
