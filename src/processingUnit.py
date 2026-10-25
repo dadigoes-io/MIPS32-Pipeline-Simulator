@@ -18,7 +18,13 @@ class ProcessingUnit:
         self.alu = alu
         self.pipeline = pipeline
         # For printing
-        self.operations = []
+        self.operations = {
+            "IF": None,
+            "ID": None,
+            "EX": None,
+            "MEM": None,
+            "WB": None
+        }
         self.raw_list = []
 
     def instruction_fetch(self, pc_src, jump_address, stall_signal):
@@ -38,10 +44,13 @@ class ProcessingUnit:
                 )
                 # For printing
                 self.pipeline.get_if_id_pr().set_instr_pc(pc_aux)
-                #if_id_reg.set_next_pc(pc)
+                self.operations["IF"] = f"Instruction fetched at PC {pc_aux}" 
 
             else:
-                self.pipeline.get_if_id_pr().set_empty(True)       
+                self.pipeline.get_if_id_pr().set_empty(True)
+    
+        else:
+            self.operations["IF"] = "STALL (PC and IF_ID unchanged)" 
 
     def instruction_decode(self, control_unit: ControlUnit, result_ex, reg_dst_ex, result_mem, reg_dst_mem):
 
@@ -282,6 +291,7 @@ class ProcessingUnit:
                 self.pipeline.get_id_ex_pr().set_instr_pc(
                     self.pipeline.get_if_id_pr().get_instr_pc()
                 )
+                self.operations["ID"] = "STALL (load-use hazard)"
                 return True
 
             # For printing
@@ -295,11 +305,6 @@ class ProcessingUnit:
                 "forwarded_value" : result_mem,
                 "forwarding_disabled" : False
             }
-
-            # Inhabilitate MEM RAW if EX RAW have same destination register
-            if raw_case_mem["operands"] and raw_case_ex["operands"]:
-                if raw_case_mem["addr_reg"] == raw_case_ex["addr_reg"]:
-                    raw_case_mem["forwarding_disabled"] = True
 
             # Forwarding EX
             if ForwardingUnit.is_raw(op_1_reg, reg_dst_ex, control_unit.get_ex_mem_control()): 
@@ -315,16 +320,20 @@ class ProcessingUnit:
             # Forwarding MEM
             if not raw_case_mem["forwarding_disabled"]:
                 if ForwardingUnit.is_raw(op_1_reg, reg_dst_mem, control_unit.get_mem_wb_control()):
-                    op_1_val = result_mem
-                    raw_case_mem["pc_orig"] = self.pipeline.get_mem_wb_pr().get_instr_pc()
                     raw_case_mem["operands"].append(1)
 
+                    if 1 in raw_case_ex["operands"]:
+                        raw_case_mem["forwarding_disabled"] = True
+                    else:
+                        op_1_val = result_mem
+
                 if ForwardingUnit.is_raw(op_2_reg, reg_dst_mem, control_unit.get_mem_wb_control()):
-                    op_2_val = result_mem 
-                    raw_case_mem["pc_orig"] = self.pipeline.get_mem_wb_pr().get_instr_pc()
                     raw_case_mem["operands"].append(2)
 
-            
+                    if 2 in raw_case_ex["operands"]:
+                        raw_case_mem["forwarding_disabled"] = True
+                    else:
+                        op_2_val = result_mem
 
             # Save raws
             if raw_case_mem["operands"]:
@@ -337,6 +346,22 @@ class ProcessingUnit:
             self.pipeline.get_id_ex_pr().update_reg(reg_dst, op_1_val, op_2_val, address_value)
 
             # For printing
+            values = ""
+
+            if op_1_reg is not None:
+                values += f"{op_1_reg}={op_1_val} "
+
+            if op_2_reg is not None:
+                values += f"{op_2_reg}={op_2_val} "
+
+            if address_value is not None:
+                values += f"immediate={address_value}"
+
+            if values:
+                self.operations["ID"] = values.strip()
+            else:
+                self.operations["ID"] = "Jump decoded"                
+
             self.pipeline.get_id_ex_pr().set_instr_pc(
                 self.pipeline.get_if_id_pr().get_instr_pc()
             )
@@ -369,7 +394,7 @@ class ProcessingUnit:
                 jump_address = self.alu.operation(int(id_ex_reg.get_address_value()),
                                                   int(id_ex_reg.get_instr_pc()),
                                                   ALUOperation.ADD)
-                str_operation = "ADD"
+                self.operations["EX"] = f"JUMP -> PC {jump_address}"
 
             elif control["Branch"]:
                 # Comprobar en eq o ne y cargar posible salto
@@ -377,8 +402,6 @@ class ProcessingUnit:
                 alu_result = int(self.alu.operation(int(id_ex_reg.get_op_1_val()),
                                                 int(id_ex_reg.get_op_2_val()),
                                                 ALUOperation.SUB))
-
-                str_operation = "SUB"
                 
                 signal_zero = (alu_result == 0)
 
@@ -388,9 +411,12 @@ class ProcessingUnit:
                         int(id_ex_reg.get_instr_pc()),
                         ALUOperation.ADD
                     )
-                    str_operation = "ADD"
                 else:
                     jump_address = None
+
+                # For printing operations
+                decision = f"TAKEN -> PC {jump_address}" if jump_address is not None else "NOT TAKEN"
+                self.operations["EX"] = f"BRANCH ({alu_result} = 0) -> {decision}"
                     
             else:
                 alu_result = self.alu.operation(id_ex_reg.get_op_1_val(),
@@ -409,7 +435,8 @@ class ProcessingUnit:
                     "instr_pc": self.pipeline.get_id_ex_pr().get_instr_pc()
                 }
 
-                self.operations.append(f"EX: ALU {str_operation} ({id_ex_reg.get_op_1_val()} + {id_ex_reg.get_op_1_val()} = {alu_result})")
+                op_2 = id_ex_reg.get_address_value() if control["ALUSrc"] else id_ex_reg.get_op_2_val()
+                self.operations["EX"] = f"{id_ex_reg.get_op_1_val()} {str_operation} {op_2} = {alu_result}"
 
             return (ex_mem_copy, jump_address)
      
@@ -429,10 +456,14 @@ class ProcessingUnit:
                 self.data_mem.write(address, self.get_pipeline().get_ex_mem_pr().get_store_data())
                 alu_data = None
                 mem_data = None
+                # For printing operations
+                self.operations["MEM"] = f"WRITE [{address}] <- {self.pipeline.get_ex_mem_pr().get_store_data()}"
             else:
                 if control_unit.get_ex_mem_control()["MemRead"]:
                     alu_data = None
                     mem_data = self.data_mem.read(address)
+                    # For printing operations
+                    self.operations["MEM"] = f"READ [{address}] -> {mem_data}"
                 else:
                     alu_data = self.get_pipeline().get_ex_mem_pr().get_alu_result()
                     mem_data = None
@@ -455,6 +486,8 @@ class ProcessingUnit:
             reg_dst = self.get_pipeline().get_mem_wb_pr().get_reg_dst()
             if control_unit.get_mem_wb_control()["RegWrite"]:
                 self.register_file.store_value(reg_dst, write_data)
+                # For printing operations
+                self.operations["WB"] = f"{reg_dst} <- {write_data}"
 
     def is_finished(self):
         # Check PC in bounds 
@@ -528,10 +561,10 @@ class ProcessingUnit:
 
         print("____________ Operations performed ____________")
 
-        for operation in self.operations:
-            print(operation)
-
-        self.operations.clear()
+        for stage in self.operations:
+            if self.operations[stage] is not None:
+                print(f"{stage}: {self.operations[stage]}")
+            self.operations[stage] = None
 
         print("_______________ Register File _______________\n")
         self.register_file.print_register_file()
