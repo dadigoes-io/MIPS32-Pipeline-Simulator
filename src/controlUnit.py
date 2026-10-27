@@ -4,31 +4,23 @@ class ControlUnit:
 
         self.id_ex_control = {
             # ID_EX
-            "ALUSrc" : False,
-            "Jump" : False,
-            "Branch" : False,
-            "BranchN" : False,
+            "ALUSrc" : False, "Jump" : False, "Branch" : False, "BranchN" : False,
             # EX_MEM
-            "MemWrite": False,
-            "MemRead": False,
+            "MemWrite": False, "MemRead": False,
             # MEM_WB
-            "MemtoReg" : False,
-            "RegWrite": False,
+            "MemtoReg" : False, "RegWrite": False,
         }
 
         self.ex_mem_control = {
             # EX_MEM
-            "MemWrite": False,
-            "MemRead": False,
+            "MemWrite": False, "MemRead": False,
             # MEM_WB
-            "MemtoReg" : False,
-            "RegWrite": False, 
+            "MemtoReg" : False, "RegWrite": False, 
         }
 
         self.mem_wb_control = {
             # MEM_WB
-            "MemtoReg" : False,
-            "RegWrite": False,
+            "MemtoReg" : False, "RegWrite": False,
         }
 
         self.alu_operation = None
