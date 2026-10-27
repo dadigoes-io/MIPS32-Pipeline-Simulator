@@ -72,7 +72,7 @@ def main():
 
     # Processing Unity creation
     instr_mem = InstructionMemory()
-    instr_mem.read_program("programs/programa_Practica2 copy.txt")
+    instr_mem.read_program("programs/programa_Practica2.txt")
     instr_mem.print_mem()
 
     processing_unit = ProcessingUnit(
