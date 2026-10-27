@@ -579,7 +579,7 @@ class ProcessingUnit:
             stage = raw["stage"]
 
             print(f"{pc_orig} : {self.instruction_mem.read(pc_orig)}\t({stage})")
-            print(f"{pc_dest} : {self.instruction_mem.read(pc_dest)}\t(ID)\n")
+            print(f"{pc_dest} : {self.instruction_mem.read(pc_dest)}\t(ID)")
 
             print(f"Register: {raw["addr_reg"]}")
             print(f"Operands: {raw["operands"]}")
@@ -592,6 +592,7 @@ class ProcessingUnit:
                 else:
                     print(f"Forwarding: {stage} -> ID")
                     print(f"Transferred value: {raw['forwarded_value']}")
+            print("\n")
 
         self.raw_list.clear()
 
